@@ -1,20 +1,24 @@
 
+import climbers.DCEClimber
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromJsonElement
-import rawTypes.Instruction
-import rawTypes.Program
+import trees.RawProgram
+import trees.TreeCooker
 
 fun main() {
     val input = generateSequence(::readLine).joinToString("\n")
     val jsonElement = Json.parseToJsonElement(input)
-    val program = Json.decodeFromJsonElement<Program>(jsonElement)
+    val rawProgram = Json.decodeFromJsonElement<RawProgram>(jsonElement)
+    val treeCooker = TreeCooker()
+    val cookedProgram = treeCooker.cookProgram(rawProgram)
+//    println(Json.encodeToString(rawProgram))
 
-    program.functions.forEach { it ->
-        it.instructions.forEach {
-            if(it is Instruction)
-                println(it.pos?.col)
+    println(cookedProgram)
+    val trivialDCE = DCEClimber()
+    val blocks = trivialDCE.trivialDCEProgram(cookedProgram)
+    blocks.forEach {
+        it.forEach {
+            println(blocks)
         }
     }
-    print(program)
-
 }
