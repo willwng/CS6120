@@ -106,8 +106,11 @@ class LVNClimber {
                     is ConstantInstruction -> processValue(inst, Const(inst.value), acc)
                     is ValueOperation -> {
                         when (inst.op) {
-                            Operator.CALL -> acc.add(inst)  // TODO: Other side-effect-y operators here
+                            // Values with side effects
+                            Operator.CALL, Operator.PHI, Operator.ALLOC, Operator.LOAD, Operator.PTRADD -> acc.add(inst)
+                            // Values that are always equivalent to an existing value
                             Operator.ID -> processCopy(inst, acc)
+                            // Possibly new values
                             else -> {
                                 processValue(
                                     inst,
