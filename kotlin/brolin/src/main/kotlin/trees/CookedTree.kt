@@ -4,7 +4,6 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /** The internal representation of a Bril program. */
-
 @Serializable
 data class CookedProgram(val functions: List<CookedFunction>)
 
@@ -17,14 +16,14 @@ data class CookedFunction(
     @SerialName("instrs") val instructions: List<CookedInstructionOrLabel> = listOf(),
 ) : SourcedObject()
 
-@Serializable
+@Serializable(with = CookedInstructionOrLabelSerializer::class)
 sealed interface CookedInstructionOrLabel
 
 @Serializable
 data class CookedLabel(val label: String) : CookedInstructionOrLabel, SourcedObject()
 
 /** An Instruction represents a unit of computational work */
-@Serializable
+@Serializable(with = CookedInstructionSerializer::class)
 sealed interface CookedInstruction : CookedInstructionOrLabel {
     val op: Operator
 }
@@ -38,19 +37,18 @@ sealed interface ReadInstruction : CookedInstruction {
     val args: List<String>
 }
 
-@Serializable
+@Serializable(with = ConstantInstructionSerializer::class)
 /** A Constant is an instruction that produces a literal value */
 data class ConstantInstruction(
     override val op: Operator = Operator.CONST,
     override val dest: String,
-    // TODO: FIX ME
-    @SerialName("typa") override val type: Type,
+    override val type: Type,
     val value: Value,
 ) : CookedInstruction, WriteInstruction {
     override fun toString() = "$dest: $type = const $value"
 }
 
-@Serializable
+@Serializable(with = EffectOperationSerializer::class)
 /** An Effect Operation is like a Value Operation, but it does not produce a value. */
 data class EffectOperation(
     override val op: Operator,

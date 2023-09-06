@@ -29,6 +29,10 @@ class Type(
     val baseType: Type?,
     val type: String
 ) {
+    fun isFinalType(): Boolean {
+        return baseType == null
+    }
+
     override fun toString(): String {
         return if (baseType == null) {
             type
@@ -53,16 +57,25 @@ object TypeSerializer : KSerializer<Type> {
         }
     }
 
+    private fun buildTypeObject(value: Type): JsonObject {
+        assert(value.baseType != null)
+        return if (value.baseType!!.isFinalType()) {
+            buildJsonObject {
+                put(value.type, value.baseType.type)
+            }
+        } else {
+            buildJsonObject {
+                put(value.type, buildTypeObject(value.baseType))
+            }
+        }
+    }
+
     override fun serialize(encoder: Encoder, value: Type) {
         if (value.baseType == null) {
-            encoder.encodeString(JsonPrimitive(value.type).toString())
+            encoder as JsonEncoder
+            encoder.encodeJsonElement(JsonUnquotedLiteral(value.type))
         } else {
-            val dum = buildJsonObject {
-                put("stupad", "anotha") // TODO build this rec
-            }
-            val typeObject = buildJsonObject {
-                put(value.type, dum) // TODO build this rec
-            }
+            val typeObject = buildTypeObject(value = value)
             encoder as JsonEncoder
             encoder.encodeJsonElement(typeObject)
         }
