@@ -1,26 +1,49 @@
 package climbers
 
-import trees.CookedInstructionOrLabel
-import trees.CookedProgram
-import trees.ReadInstruction
-import trees.WriteInstruction
+import trees.*
 
 class DCEClimber {
 
     fun trivialDCEProgram(program: CookedProgram): List<List<BasicBlock>> {
         val basicClimber = BlockClimber()
         return basicClimber.basicBlocker(program).map {
-            it.map(::trivialDCE)
+            it.map(::reverseDCE)
         }
     }
 
-    private fun trivialDCE(basicBlock: BasicBlock): BasicBlock {
+    fun forwardDCE(basicBlock: BasicBlock): BasicBlock {
         var instructions = basicBlock.instructions
         var result = arrayListOf<CookedInstructionOrLabel>()
-        val deadVars = hashSetOf<String>()
         var changed = true
         while (changed) {
             changed = false
+            val unusedDefs: MutableMap<String, CookedInstruction> = hashMapOf()
+            instructions.forEach { instr ->
+                result.add(instr)
+                if (instr is ReadInstruction) {
+                    instr.args.forEach{ unusedDefs.remove(it) }
+                }
+                if (instr is WriteInstruction) {
+                    if (instr.dest in unusedDefs) {
+                        result.removeAt(result.lastIndexOf(unusedDefs[instr.dest]!!))
+                        changed = true
+                    }
+                    unusedDefs[instr.dest] = instr
+                }
+            }
+            instructions = result
+            result = arrayListOf()
+        }
+        return BasicBlock(instructions = instructions)
+    }
+
+    fun reverseDCE(basicBlock: BasicBlock): BasicBlock {
+        var instructions = basicBlock.instructions
+        var result = arrayListOf<CookedInstructionOrLabel>()
+        var changed = true
+        while (changed) {
+            changed = false
+            val deadVars = hashSetOf<String>()
             instructions.reversed().forEach { instr ->
                 result.add(instr)
                 if (instr is ReadInstruction) {
