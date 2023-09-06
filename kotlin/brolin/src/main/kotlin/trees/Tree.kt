@@ -61,7 +61,7 @@ object TypeSerializer : KSerializer<Type> {
         assert(value.baseType != null)
         return if (value.baseType!!.isFinalType()) {
             buildJsonObject {
-                put(value.type, value.baseType.type)
+                put(value.type, JsonUnquotedLiteral(value.baseType.type))
             }
         } else {
             buildJsonObject {
