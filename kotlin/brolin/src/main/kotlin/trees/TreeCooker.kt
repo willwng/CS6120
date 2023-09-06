@@ -2,11 +2,12 @@ package trees
 
 import kotlinx.serialization.json.*
 
+/** Turns RawTrees into CookedTrees */
+
 class TreeCooker {
 
     fun cookProgram(rawProgram: RawProgram): CookedProgram =
         CookedProgram(functions = rawProgram.rawFunctions.map { func -> cookFunction(func) })
-
 
     private fun cookFunction(rawFunction: RawFunction): CookedFunction =
         CookedFunction(
@@ -14,7 +15,6 @@ class TreeCooker {
             rawFunction.args,
             rawFunction.type,
             rawFunction.instructions.map { cookInstructionOrLabel(it) })
-
 
     private fun cookInstructionOrLabel(instructionOrLabel: RawInstructionOrLabel): CookedInstructionOrLabel =
         when (instructionOrLabel) {

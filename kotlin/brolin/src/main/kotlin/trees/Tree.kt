@@ -17,7 +17,6 @@ abstract class SourcedObject {
 @Serializable
 data class Position(val row: Int, val col: Int)
 
-
 /** Arguments to functions */
 @Serializable
 data class Argument(
@@ -38,7 +37,6 @@ class Type(
         }
     }
 }
-
 
 @OptIn(ExperimentalSerializationApi::class)
 @Serializer(forClass = Type::class)
@@ -75,6 +73,4 @@ object TypeSerializer : KSerializer<Type> {
         val element = decoder.decodeJsonElement()
         return deserialize(element)
     }
-
 }
-

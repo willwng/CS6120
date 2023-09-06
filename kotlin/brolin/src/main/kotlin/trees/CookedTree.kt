@@ -3,6 +3,8 @@ package trees
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
+/** The internal representation of a Bril program. */
+
 @Serializable
 data class CookedProgram(val functions: List<CookedFunction>)
 
