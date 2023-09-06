@@ -24,14 +24,14 @@ class DCEClimber {
             instructions.reversed().forEach { instr ->
                 result.add(instr)
                 if (instr is ReadInstruction) {
-                    deadVars.removeAll(instr.args().toSet())
+                    deadVars.removeAll(instr.args.toSet())
                 }
                 if (instr is WriteInstruction) {
-                    if (instr.dest() in deadVars) {
+                    if (instr.dest in deadVars) {
                         result.removeLast()
                         changed = true
                     }
-                    deadVars.add(instr.dest())
+                    deadVars.add(instr.dest)
                 }
             }
             instructions = result.reversed()

@@ -17,54 +17,50 @@ data class CookedFunction(
     @SerialName("instrs") val instructions: List<CookedInstructionOrLabel> = listOf(),
 ) : SourcedObject()
 
-interface CookedInstructionOrLabel
+sealed interface CookedInstructionOrLabel
 
 @Serializable
 data class CookedLabel(val label: String) : CookedInstructionOrLabel, SourcedObject()
 
 /** An Instruction represents a unit of computational work */
 @Serializable
-abstract class CookedInstruction(open val op: Operator) : CookedInstructionOrLabel
-
-interface WriteInstruction {
-    fun dest(): String
+sealed interface CookedInstruction: CookedInstructionOrLabel {
+    val op: Operator
 }
 
-interface ReadInstruction {
-    fun args(): List<String>
+sealed interface WriteInstruction : CookedInstruction {
+    val dest: String
+    val type: Type
+}
+
+sealed interface ReadInstruction : CookedInstruction {
+    val args: List<String>
 }
 
 /** A Constant is an instruction that produces a literal value */
 data class ConstantInstruction(
     override val op: Operator = Operator.CONST,
-    val dest: String,
-    val type: Type,
+    override val dest: String,
+    override val type: Type,
     val value: Value,
-) : CookedInstruction(op = op), WriteInstruction {
-    override fun dest() = dest
-}
+) : CookedInstruction, WriteInstruction
 
 /** An Effect Operation is like a Value Operation, but it does not produce a value. */
 data class EffectOperation(
     override val op: Operator,
-    val args: List<String>? = listOf(),
-    val funcs: List<String>? = listOf(),
-    val labels: List<String>? = listOf(),
-) : CookedInstruction(op = op), ReadInstruction {
-    override fun args(): List<String> = args ?: listOf()
-}
+    override val args: List<String> = listOf(),
+    val funcs: List<String> = listOf(),
+    val labels: List<String> = listOf(),
+) : CookedInstruction, ReadInstruction
 
 data class ValueOperation(
     override val op: Operator,
-    val dest: String,
-    val type: Type,
-    val args: List<String>? = listOf(),
-    val funcs: List<String>? = listOf(),
-    val labels: List<String>? = listOf()
-) : CookedInstruction(op = op), ReadInstruction, WriteInstruction {
-    override fun dest() = dest
-    override fun args(): List<String> = args ?: listOf()
-}
+    override val dest: String,
+    override val type: Type,
+    override val args: List<String> = listOf(),
+    val funcs: List<String> = listOf(),
+    val labels: List<String> = listOf()
+) : CookedInstruction, ReadInstruction, WriteInstruction
 
 @Serializable
 enum class Operator {
@@ -84,5 +80,3 @@ data class IntValue(val value: Int) : Value
 
 @Serializable
 data class FloatValue(val value: Float) : Value
-
-

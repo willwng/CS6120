@@ -65,30 +65,30 @@ class TreeCooker {
             "const" -> Operator.CONST
             "add" -> Operator.ADD
             "sub" -> Operator.SUB
-            "mul"->Operator.MUL
-            "div"->Operator.DIV
-            "eq"->Operator.EQ
-            "lt"->Operator.LT
-            "gt"->Operator.GT
-            "le"->Operator.LE
-            "ge"->Operator.GE
-            "not"->Operator.NOT
-            "and"->Operator.AND
-            "or"->Operator.OR
-            "jmp"->Operator.JMP
-            "br"->Operator.BR
-            "call"->Operator.CALL
-            "ret"->Operator.RET
-            "id"->Operator.ID
-            "print"->Operator.PRINT
-            "nop"->Operator.NOP
+            "mul" -> Operator.MUL
+            "div" -> Operator.DIV
+            "eq" -> Operator.EQ
+            "lt" -> Operator.LT
+            "gt" -> Operator.GT
+            "le" -> Operator.LE
+            "ge" -> Operator.GE
+            "not" -> Operator.NOT
+            "and" -> Operator.AND
+            "or" -> Operator.OR
+            "jmp" -> Operator.JMP
+            "br" -> Operator.BR
+            "call" -> Operator.CALL
+            "ret" -> Operator.RET
+            "id" -> Operator.ID
+            "print" -> Operator.PRINT
+            "nop" -> Operator.NOP
             // Extensions
-            "alloc"-> Operator.ALLOC
-            "free"-> Operator.FREE
-            "ptradd"-> Operator.PTRADD
-            "load"-> Operator.LOAD
-            "store"-> Operator.STORE
-            "phi"-> Operator.PHI
+            "alloc" -> Operator.ALLOC
+            "free" -> Operator.FREE
+            "ptradd" -> Operator.PTRADD
+            "load" -> Operator.LOAD
+            "store" -> Operator.STORE
+            "phi" -> Operator.PHI
             else -> throw (Error("Unsupported operator: $op"))
         }
 
