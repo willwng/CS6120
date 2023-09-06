@@ -1,0 +1,10 @@
+@main {
+  v: int = const 4;
+  a: int = const 4;
+  b: int = add v a;
+  c: int = add a a;  # This line should become dead code since the print statement will use b instead
+  print c;
+  c: int = const 1;
+.here:
+  d: int = const 4;
+}

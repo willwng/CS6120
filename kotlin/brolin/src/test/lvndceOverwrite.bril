@@ -1,0 +1,11 @@
+@main {
+  b0: int = const 4;
+  a: int = const 4;
+  b: int = add b0 a;
+  c: int = add a a;
+  print c;
+  # Since b is overwritten, we will store its former value in a fresh variable, which will be b1 since b0 is taken
+  b: int = const 1;
+.here:
+  d: int = const 4;
+}

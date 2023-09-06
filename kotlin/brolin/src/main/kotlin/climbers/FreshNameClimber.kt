@@ -5,7 +5,7 @@ import trees.WriteInstruction
 
 class FreshNameClimber(program: CookedProgram) {
     val usedNames = mutableSetOf<String>()
-    val i = 0
+    var i = 0
 
     init {
         program.functions.forEach { function ->
@@ -24,6 +24,7 @@ class FreshNameClimber(program: CookedProgram) {
                 usedNames.add(candidate)
                 return candidate
             }
+            i++
         } while (true)
     }
 
