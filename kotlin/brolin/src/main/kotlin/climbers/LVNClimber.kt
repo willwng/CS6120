@@ -10,7 +10,16 @@ data class Const(val value: Value) : BrilValue
 data class ValueTuple(val op: Operator, val args: List<Int>) : BrilValue
 
 class LVNClimber {
-    private fun lvn(basicBlock: BasicBlock): BasicBlock {
+
+    fun lvnProgram(program: CookedProgram): List<List<BasicBlock>> {
+        val freshNames = FreshNameClimber(program)
+        val basicClimber = BlockClimber()
+        return basicClimber.basicBlocker(program).map {
+            it.map { block -> lvn(block, freshNames) }
+        }
+    }
+
+    private fun lvn(basicBlock: BasicBlock, freshNames: FreshNameClimber): BasicBlock {
         val tupleToNum: MutableMap<BrilValue, Int> = hashMapOf()  // map to value numbers
         val numToValueCanonicalVar: ArrayList<Pair<BrilValue, String>> =
             arrayListOf()  // map to value tuples, where index is value number
@@ -81,9 +90,9 @@ class LVNClimber {
                 if (inst is WriteInstruction) {
                     val numOfOverwrittenValue = env[inst.dest]
                     if (numOfOverwrittenValue != null) {  // we are indeed overwriting something
-                        val newCanonicalVar = freshName() // TODO
                         val (value, oldCanonicalVar) = numToValueCanonicalVar[numOfOverwrittenValue]
                         // Update table to use new canonical variable
+                        val newCanonicalVar = freshNames.get(base = oldCanonicalVar)
                         numToValueCanonicalVar[numOfOverwrittenValue] = Pair(value, newCanonicalVar)
                         // Declare new canonical variable to be copy of old value
                         acc.add(
