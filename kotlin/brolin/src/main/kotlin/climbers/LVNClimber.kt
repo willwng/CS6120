@@ -25,14 +25,9 @@ class LVNClimber {
             arrayListOf()  // map to value tuples, where index is value number
         val env: MutableMap<String, Int> = hashMapOf()  // mapping from variable names to current value number
 
-        // TODO: We never need to add ID instructions, since if we use the first binding of a value
-        //  as its canonical variable then the dests of ID instructions will never be useful.
-        //  But we may decide to reassign canonical variables later, so maybe it's just better
-        //  to handle this with DCE. In processComputation and processCopy
-
         /** Modifies table and environment using the provided BrilValue tuple, and adds appropriate instructions
          *  to the block. */
-        fun processComputation(
+        fun processValue(
             inst: WriteInstruction,
             value: BrilValue,
             blockBuilder: MutableList<CookedInstructionOrLabel>
@@ -86,34 +81,35 @@ class LVNClimber {
 
         val result: ArrayList<CookedInstructionOrLabel> =
             basicBlock.instructions.fold(initial = arrayListOf()) { acc, inst ->
-
                 if (inst is WriteInstruction) {
                     val numOfOverwrittenValue = env[inst.dest]
                     if (numOfOverwrittenValue != null) {  // we are indeed overwriting something
                         val (value, oldCanonicalVar) = numToValueCanonicalVar[numOfOverwrittenValue]
-                        // Update table to use new canonical variable
-                        val newCanonicalVar = freshNames.get(base = oldCanonicalVar)
-                        numToValueCanonicalVar[numOfOverwrittenValue] = Pair(value, newCanonicalVar)
-                        // Declare new canonical variable to be copy of old value
-                        acc.add(
-                            ValueOperation(
-                                op = Operator.ID,
-                                dest = newCanonicalVar,
-                                type = inst.type,
-                                args = listOf(oldCanonicalVar)
+                        if (oldCanonicalVar == inst.dest) {
+                            // Update table to use new canonical variable
+                            val newCanonicalVar = freshNames.get(base = oldCanonicalVar)
+                            numToValueCanonicalVar[numOfOverwrittenValue] = Pair(value, newCanonicalVar)
+                            // Declare new canonical variable to be copy of old value
+                            acc.add(
+                                ValueOperation(
+                                    op = Operator.ID,
+                                    dest = newCanonicalVar,
+                                    type = inst.type,
+                                    args = listOf(oldCanonicalVar)
+                                )
                             )
-                        )
+                        }
                     }
                 }
 
                 when (inst) {
-                    is ConstantInstruction -> processComputation(inst, Const(inst.value), acc)
+                    is ConstantInstruction -> processValue(inst, Const(inst.value), acc)
                     is ValueOperation -> {
                         when (inst.op) {
                             Operator.CALL -> acc.add(inst)  // TODO: Other side-effect-y operators here
                             Operator.ID -> processCopy(inst, acc)
                             else -> {
-                                processComputation(
+                                processValue(
                                     inst,
                                     ValueTuple(
                                         op = inst.op,

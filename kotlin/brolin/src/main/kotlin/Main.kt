@@ -1,5 +1,6 @@
-
+import climbers.BlockClimber
 import climbers.DCEClimber
+import climbers.LVNClimber
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromJsonElement
 import trees.RawProgram
@@ -12,13 +13,20 @@ fun main() {
     val treeCooker = TreeCooker()
     val cookedProgram = treeCooker.cookProgram(rawProgram)
 //    println(Json.encodeToString(rawProgram))
+//    println(cookedProgram)
 
-    println(cookedProgram)
-    val trivialDCE = DCEClimber()
-    val blocks = trivialDCE.trivialDCEProgram(cookedProgram)
-    blocks.forEach {
-        it.forEach {
-            println(blocks)
-        }
+    val lvn = LVNClimber()
+    val dce = DCEClimber()
+    val blocks = BlockClimber().basicBlocker(cookedProgram)
+    val lvnBlocks = lvn.lvnProgram(cookedProgram)
+    val elimBlocks = lvnBlocks.map {
+        it.map { block -> dce.reverseDCE(block) }
     }
+    println(blocks)
+    println(lvnBlocks)
+    println(elimBlocks)
+
+    assert(lvnBlocks.map { it.map { block -> dce.reverseDCE(block) } } == lvnBlocks.map {
+        it.map { block -> dce.forwardDCE(block) }
+    })
 }

@@ -43,7 +43,9 @@ data class ConstantInstruction(
     override val dest: String,
     override val type: Type,
     val value: Value,
-) : CookedInstruction, WriteInstruction
+) : CookedInstruction, WriteInstruction {
+    override fun toString() = "$dest: $type = const $value"
+}
 
 /** An Effect Operation is like a Value Operation, but it does not produce a value. */
 data class EffectOperation(
@@ -60,7 +62,9 @@ data class ValueOperation(
     override val args: List<String> = listOf(),
     val funcs: List<String> = listOf(),
     val labels: List<String> = listOf()
-) : CookedInstruction, ReadInstruction, WriteInstruction
+) : CookedInstruction, ReadInstruction, WriteInstruction {
+    override fun toString() = "$dest: $type = $op $args"
+}
 
 @Serializable
 enum class Operator(val commutative: Boolean = false) {
@@ -75,10 +79,16 @@ enum class Operator(val commutative: Boolean = false) {
 interface Value
 
 @Serializable
-data class BooleanValue(val value: Boolean) : Value
+data class BooleanValue(val value: Boolean) : Value {
+    override fun toString() = "$value"
+}
 
 @Serializable
-data class IntValue(val value: Int) : Value
+data class IntValue(val value: Int) : Value {
+    override fun toString() = "$value"
+}
 
 @Serializable
-data class FloatValue(val value: Float) : Value
+data class FloatValue(val value: Float) : Value {
+    override fun toString() = "$value"
+}
