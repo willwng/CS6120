@@ -1,6 +1,7 @@
 import climbers.BlockClimber
 import climbers.DCEClimber
 import climbers.LVNClimber
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromJsonElement
 import trees.RawProgram
@@ -29,4 +30,6 @@ fun main() {
     assert(lvnBlocks.map { it.map { block -> dce.reverseDCE(block) } } == lvnBlocks.map {
         it.map { block -> dce.forwardDCE(block) }
     })
+
+    println(Json.encodeToString(cookedProgram))
 }
