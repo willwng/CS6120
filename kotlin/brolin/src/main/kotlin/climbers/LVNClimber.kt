@@ -122,7 +122,15 @@ class LVNClimber {
                             }
                         }
                     }
-                    is EffectOperation, is CookedLabel -> acc.add(inst)
+                    is CookedLabel -> acc.add(inst)
+                    is EffectOperation -> acc.add(
+                        EffectOperation(
+                            op = inst.op,
+                            args = inst.args.map { numToValueCanonicalVar[env[it]!!].second },
+                            funcs = inst.funcs,
+                            labels = inst.labels
+                        )
+                    )
                 }
                 acc
             }
