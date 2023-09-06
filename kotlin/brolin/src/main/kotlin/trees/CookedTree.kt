@@ -24,7 +24,7 @@ data class CookedLabel(val label: String) : CookedInstructionOrLabel, SourcedObj
 
 /** An Instruction represents a unit of computational work */
 @Serializable
-sealed interface CookedInstruction: CookedInstructionOrLabel {
+sealed interface CookedInstruction : CookedInstructionOrLabel {
     val op: Operator
 }
 
@@ -63,8 +63,10 @@ data class ValueOperation(
 ) : CookedInstruction, ReadInstruction, WriteInstruction
 
 @Serializable
-enum class Operator {
-    CONST, ADD, MUL, SUB, DIV, EQ, LT, GT, LE, GE, NOT, AND, OR, JMP, BR, CALL, RET, ID, PRINT, NOP,
+enum class Operator(val commutative: Boolean = false) {
+    CONST,
+    ADD(true), MUL(true), EQ(true), AND(true), OR(true),
+    SUB, DIV, LT, GT, LE, GE, NOT, JMP, BR, CALL, RET, ID, PRINT, NOP,
 
     // Extensions
     PHI, ALLOC, STORE, LOAD, FREE, PTRADD
