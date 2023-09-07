@@ -3,11 +3,19 @@ package climbers
 import trees.*
 
 data class BasicBlock(val instructions: List<CookedInstructionOrLabel>)
-typealias BlockedFunction = Pair<CookedFunction, List<BasicBlock>>
-typealias BlockedProgram = List<BlockedFunction>
 
+data class BlockedProgram(
+    val blockedFunctions: List<BlockedFunction>
+)
+
+data class BlockedFunction(
+    val function: CookedFunction,
+    val basicBlocks: List<BasicBlock>
+)
+
+/** Returns the CookedProgram represented by the BlockedProgram */
 private fun BlockedProgram.toCookedProgram(): CookedProgram =
-    CookedProgram(this.map { (originalFunction, blocks) ->
+    CookedProgram(blockedFunctions.map { (originalFunction, blocks) ->
         CookedFunction(
             originalFunction.name,
             originalFunction.args,
@@ -18,15 +26,27 @@ private fun BlockedProgram.toCookedProgram(): CookedProgram =
 
 /** Setters create the routes upon which climbers operate. */
 class BlockSetter {
+    // Operations that have more complicated control-flow (signifies end of block)
     private val terminators = listOf(Operator.JMP, Operator.RET, Operator.BR)
 
-    /** Takes a function at the granularity of basic blocks and returns the result of applying it to the program */
-    fun applyToProgramBlocks(program: CookedProgram, f: (block: BasicBlock) -> BasicBlock): CookedProgram =
-        block(program).map { (function, blocks) -> Pair(function, blocks.map(f)) }.toCookedProgram()
+    /** Takes a function [f] at the granularity of basic blocks and returns the result of applying it to the program */
+    fun applyToProgramBlocks(program: CookedProgram, f: (block: BasicBlock) -> BasicBlock): CookedProgram {
+        val mappedFunctions = block(program).blockedFunctions.map { (function, blocks) ->
+            BlockedFunction(function = function, basicBlocks = blocks.map(f))
+        }
+        return BlockedProgram(blockedFunctions = mappedFunctions).toCookedProgram()
+    }
 
+    /** Converts [program] into a BlockedProgram with BlockedFunctions */
     private fun block(program: CookedProgram): BlockedProgram =
-        program.functions.map { function -> Pair(function, block(function)) }
+        BlockedProgram(blockedFunctions = program.functions.map { function ->
+            BlockedFunction(
+                function,
+                block(function)
+            )
+        })
 
+    /** Converts [function] into a list of basic blocks */
     private fun block(function: CookedFunction): List<BasicBlock> {
         val blocks: ArrayList<BasicBlock> = arrayListOf()
         var currentBlock: ArrayList<CookedInstructionOrLabel> = arrayListOf()

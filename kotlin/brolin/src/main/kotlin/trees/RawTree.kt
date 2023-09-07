@@ -1,3 +1,7 @@
+/**
+ * The tree constructed directly from JSON.
+ * This is a temporary data structure ready to be cooked into the more usable CookedTree
+ */
 package trees
 
 import kotlinx.serialization.DeserializationStrategy
@@ -8,7 +12,6 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonObject
 
-/** The tree constructed directly from JSON. */
 
 /** A Program is the top-level object */
 @Serializable
