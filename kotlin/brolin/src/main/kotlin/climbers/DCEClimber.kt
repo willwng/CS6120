@@ -4,13 +4,38 @@ import trees.*
 
 class DCEClimber : Climber {
 
-    override fun applyToProgram(program: CookedProgram): CookedProgram = forwardDCEprogram(program)
+    override fun applyToProgram(program: CookedProgram): CookedProgram = globalDCE(forwardLocalDCE(program))
 
-    fun forwardDCEprogram(program: CookedProgram): CookedProgram = BlockSetter().applyToProgramBlocks(program, ::forwardDCE)
+    /**
+     * This pass is stronger than local DCE in that it can view the entire program, but weaker in that if it sees
+     * any variable being used, it preserves all definitions of it.
+     */
+    private fun globalDCE(program: CookedProgram): CookedProgram {
+        val used = hashSetOf<String>()
+        program.functions.forEach { function ->
+            function.instructions.filterIsInstance<ReadInstruction>().forEach {
+                used.addAll(it.args)
+            }
+        }
+        return CookedProgram(program.functions.map { function ->
+            CookedFunction(function.name, function.args, function.type,
+                function.instructions.filter {
+                    when (it) {
+                        is WriteInstruction -> it.dest in used
+                        else -> true
+                    }
+                }
+            )
+        })
+    }
 
-    fun reverseDCEprogram(program: CookedProgram): CookedProgram = BlockSetter().applyToProgramBlocks(program, ::reverseDCE)
+    private fun forwardLocalDCE(program: CookedProgram): CookedProgram =
+        BlockSetter().applyToProgramBlocks(program, ::forward)
 
-    fun forwardDCE(basicBlock: BasicBlock): BasicBlock {
+    private fun reverseLocalDCE(program: CookedProgram): CookedProgram =
+        BlockSetter().applyToProgramBlocks(program, this::reverse)
+
+    private fun forward(basicBlock: BasicBlock): BasicBlock {
         var instructions = basicBlock.instructions
         var result = arrayListOf<CookedInstructionOrLabel>()
         var changed = true
@@ -36,7 +61,7 @@ class DCEClimber : Climber {
         return BasicBlock(instructions = instructions)
     }
 
-    fun reverseDCE(basicBlock: BasicBlock): BasicBlock {
+    private fun reverse(basicBlock: BasicBlock): BasicBlock {
         var instructions = basicBlock.instructions
         var result = arrayListOf<CookedInstructionOrLabel>()
         var changed = true

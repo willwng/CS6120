@@ -16,12 +16,14 @@ fun main() {
 //    println(cookedProgram)
 
     val dceClimber = DCEClimber()
-    val lvn = LVNClimber().applyToProgram(cookedProgram)
-    assert(dceClimber.forwardDCEprogram(lvn) == dceClimber.reverseDCEprogram(lvn))
+    val lvnClimber = LVNClimber()
+    val lvn = lvnClimber.applyToProgram(cookedProgram)
     val dce = dceClimber.applyToProgram(lvn)
+    val lvn2 = lvnClimber.applyToProgram(dce)
+    val dce2 = dceClimber.applyToProgram(lvn2)
 
-    println(dce)
+//    assert(dceClimber.forwardLocalDCE(lvn) == dceClimber.reverseLocalDCE(lvn))
 
     val prettyJsonPrinter = Json { prettyPrint = true }
-    println(prettyJsonPrinter.encodeToString(dce))
+    println(prettyJsonPrinter.encodeToString(dce2))
 }
