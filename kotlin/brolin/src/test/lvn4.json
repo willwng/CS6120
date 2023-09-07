@@ -1,0 +1,62 @@
+{
+  "functions": [
+    {
+      "instrs": [
+        {
+          "labels": [
+            "a"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "b"
+        },
+        {
+          "args": [
+            "x"
+          ],
+          "dest": "y",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "dest": "x",
+          "op": "const",
+          "type": "int",
+          "value": 5
+        },
+        {
+          "labels": [
+            "c"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "a"
+        },
+        {
+          "dest": "x",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "labels": [
+            "b"
+          ],
+          "op": "jmp"
+        },
+        {
+          "label": "c"
+        },
+        {
+          "args": [
+            "y"
+          ],
+          "op": "print"
+        }
+      ],
+      "name": "main"
+    }
+  ]
+}
