@@ -22,14 +22,6 @@ object TreeCooker {
             else -> throw (Error("Unsupported raw type"))
         }
 
-    /** Fixes the types of constants when there is ambiguity (e.g., x: float = const 42) */
-    private fun ConstantInstruction.fixConstantType() : ConstantInstruction {
-        if (type.isFloat() && value is IntValue) {
-            return ConstantInstruction(op = op, dest = dest, type = type, value = FloatValue(value.value.toFloat()))
-        }
-        return this
-    }
-
     private fun cookInstruction(rawInstruction: RawInstruction): CookedInstruction {
         when {
             // Constant instructions
@@ -38,8 +30,8 @@ object TreeCooker {
                 return ConstantInstruction(
                     dest = rawInstruction.dest!!,
                     type = rawInstruction.type!!,
-                    value = cookValue(rawInstruction.jsonValue!!)
-                ).fixConstantType()
+                    value = cookValue(rawInstruction.type, rawInstruction.jsonValue!!)
+                )
             }
             // Effect operation
             rawInstruction.dest == null -> {
@@ -107,12 +99,11 @@ object TreeCooker {
             else -> throw (Error("Unsupported operator: $op"))
         }
 
-    private fun cookValue(jsonValue: JsonPrimitive): Value {
+    private fun cookValue(type: Type, jsonValue: JsonPrimitive): Value {
         return when {
             jsonValue.content == "true" -> BooleanValue(value = true)
             jsonValue.content == "false" -> BooleanValue(value = false)
-            // This order is important to not accidentally parse ints as floats
-            jsonValue.intOrNull != null -> IntValue(value = jsonValue.int)
+            jsonValue.intOrNull != null && type.type == "\"int\"" -> IntValue(value = jsonValue.int)
             jsonValue.floatOrNull != null -> FloatValue(value = jsonValue.float)
             else -> throw (Error("Unsupported value: $jsonValue"))
         }

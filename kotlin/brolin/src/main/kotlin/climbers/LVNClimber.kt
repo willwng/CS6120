@@ -12,6 +12,19 @@ data class ValueTuple(val op: Operator, val args: List<Int>) : BrilValue
 /** Represents the value of a variable defined outside the current block. */
 data class Outsider(val variable: String) : BrilValue
 
+/** Never equal to any other BrilValue. */
+data class ImpureValue(private val i: Int = 0) : BrilValue {
+    companion object {
+        var i = 0
+        fun get(): Int {
+            i++
+            return i
+        }
+    }
+
+    constructor() : this(get())
+}
+
 class LVNClimber : Climber {
 
     override fun applyToProgram(program: CookedProgram): CookedProgram {
@@ -123,8 +136,10 @@ class LVNClimber : Climber {
                     is ConstantInstruction -> processValue(inst, Const(inst.value), acc)
                     is ValueOperation -> {
                         when (inst.op) {
-                            // Values with side effects
-                            Operator.CALL, Operator.PHI, Operator.ALLOC, Operator.LOAD, Operator.PTRADD -> acc.add(inst)
+                            // Values with side effects. We create a dummy value to record in the environment that the
+                            // variable has changed, so we erase any existing equivalences.
+                            Operator.CALL, Operator.PHI, Operator.ALLOC, Operator.LOAD, Operator.PTRADD ->
+                                processValue(inst, ImpureValue(), acc)
                             // Values that are always equivalent to an existing value
                             Operator.ID -> processCopy(inst, acc)
                             // Possibly new values
