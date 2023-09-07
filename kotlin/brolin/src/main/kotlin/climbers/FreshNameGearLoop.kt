@@ -3,10 +3,10 @@ package climbers
 import trees.CookedProgram
 import trees.WriteInstruction
 
-/** A gearloop assists climbers. */
-class FreshNameGearloop(program: CookedProgram) {
-    val usedNames = mutableSetOf<String>()
-    var i = 0
+/** A gear-loop assists climbers. This one creates fresh names for variables */
+class FreshNameGearLoop(program: CookedProgram) {
+    private val usedNames = mutableSetOf<String>()
+    private var i = 0
 
     init {
         program.functions.forEach { function ->

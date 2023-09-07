@@ -5,6 +5,7 @@ package trees
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import java.math.BigInteger
 
 /** The internal representation of a Bril program. */
 @Serializable
@@ -31,11 +32,13 @@ sealed interface CookedInstruction : CookedInstructionOrLabel {
     val op: Operator
 }
 
+/** Instructions that define a variable */
 sealed interface WriteInstruction : CookedInstruction {
     val dest: String
     val type: Type
 }
 
+/** Instructions that use a variable */
 sealed interface ReadInstruction : CookedInstruction {
     val args: List<String>
 }
@@ -47,12 +50,10 @@ data class ConstantInstruction(
     override val dest: String,
     override val type: Type,
     val value: Value,
-) : CookedInstruction, WriteInstruction {
-    override fun toString() = "$dest: $type = const $value"
-}
+) : CookedInstruction, WriteInstruction
 
-@Serializable(with = EffectOperationSerializer::class)
 /** An Effect Operation is like a Value Operation, but it does not produce a value. */
+@Serializable(with = EffectOperationSerializer::class)
 data class EffectOperation(
     override val op: Operator,
     override val args: List<String> = listOf(),
@@ -60,6 +61,7 @@ data class EffectOperation(
     val labels: List<String> = listOf(),
 ) : CookedInstruction, ReadInstruction
 
+/** A Value Operation is an instruction that takes arguments, does some computation, and produces a value */
 @Serializable(with = ValueOperationSerializer::class)
 data class ValueOperation(
     override val op: Operator,
@@ -85,24 +87,17 @@ enum class Operator(val commutative: Boolean = false) {
     // Extensions
     FADD(true), FMUL(true), FDIV, FSUB, FEQ(true), FGT, FLT, FGE, FLE,
     PHI, ALLOC, STORE, LOAD, FREE, PTRADD;
-
 }
 
 
+/** The types of values/literals that appear as constants */
 @Serializable(with = ValueSerializer::class)
 sealed interface Value
 
 @Serializable
-data class BooleanValue(val value: Boolean) : Value {
-    override fun toString() = "$value"
-}
+data class BooleanValue(val value: Boolean) : Value
+
+data class IntValue(val value: BigInteger) : Value
 
 @Serializable
-data class IntValue(val value: Int) : Value {
-    override fun toString() = "$value"
-}
-
-@Serializable
-data class FloatValue(val value: Float) : Value {
-    override fun toString() = "$value"
-}
+data class FloatValue(val value: Float) : Value

@@ -1,5 +1,6 @@
 package trees
 
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.serializer
@@ -9,6 +10,8 @@ import kotlinx.serialization.descriptors.element
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.encoding.encodeStructure
+import kotlinx.serialization.json.JsonEncoder
+import kotlinx.serialization.json.JsonUnquotedLiteral
 import java.util.*
 
 
@@ -36,9 +39,10 @@ object ValueSerializer : KSerializer<Value> {
         throw (Error("Cooked value should not be deserialized"))
     }
 
+    @OptIn(ExperimentalSerializationApi::class)
     override fun serialize(encoder: Encoder, value: Value) {
         when (value) {
-            is IntValue -> encoder.encodeInt(value.value)
+            is IntValue -> (encoder as JsonEncoder).encodeJsonElement(JsonUnquotedLiteral(value.value.toString()))
             is FloatValue -> encoder.encodeFloat(value.value)
             is BooleanValue -> encoder.encodeBoolean(value.value)
         }

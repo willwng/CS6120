@@ -1,8 +1,10 @@
 package trees
 
-import kotlinx.serialization.json.*
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.float
+import kotlinx.serialization.json.floatOrNull
 
-/** Turns RawTrees into CookedTrees */
+/** The TreeCooker RawTrees into CookedTrees */
 object TreeCooker {
 
     fun cookProgram(rawProgram: RawProgram): CookedProgram =
@@ -103,7 +105,7 @@ object TreeCooker {
         return when {
             jsonValue.content == "true" -> BooleanValue(value = true)
             jsonValue.content == "false" -> BooleanValue(value = false)
-            jsonValue.intOrNull != null && type.type == "\"int\"" -> IntValue(value = jsonValue.int)
+            jsonValue.content.toBigIntegerOrNull() != null && type.type == "\"int\"" -> IntValue(value = jsonValue.content.toBigInteger())
             jsonValue.floatOrNull != null -> FloatValue(value = jsonValue.float)
             else -> throw (Error("Unsupported value: $jsonValue"))
         }

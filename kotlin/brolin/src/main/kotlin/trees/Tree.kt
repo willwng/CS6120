@@ -1,3 +1,4 @@
+/** Contains classes/objects that are shared between Cooked and RawTrees */
 package trees
 
 import kotlinx.serialization.*
@@ -24,6 +25,7 @@ data class Argument(
     val type: Type
 ) : SourcedObject()
 
+/** Type is either a primitive, or a parametrized type, which wraps a smaller one */
 @Serializable(with = TypeSerializer::class)
 class Type(
     val baseType: Type?,
@@ -42,7 +44,7 @@ class Type(
     }
 
     fun isFloat(): Boolean {
-        return isFinalType() && type == "float"
+        return isFinalType() && type == "\"float\""
     }
 }
 
