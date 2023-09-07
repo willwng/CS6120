@@ -14,8 +14,8 @@ result_df.columns = ['benchmark', 'baseline', 'ours']
 result_df = result_df.fillna(0)
 
 # Speedup
-result_df['baseline'] = pd.to_numeric(result_df['baseline'])
-result_df['ours'] = pd.to_numeric(result_df['ours'])
+result_df['baseline'] = pd.to_numeric(result_df['baseline'], errors='coerce')
+result_df['ours'] = pd.to_numeric(result_df['ours'], errors='coerce')
 result_df['% speedup'] = ((result_df['baseline'] - result_df['ours']) / result_df['baseline']*100).round(1)
 
 # Save the result to a new CSV file

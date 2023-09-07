@@ -86,6 +86,7 @@ class TreeCooker {
             "fadd" -> Operator.FADD
             "fmul" -> Operator.FMUL
             "fdiv" -> Operator.FDIV
+            "fsub" -> Operator.FSUB
             "feq" -> Operator.FEQ
             "flt" -> Operator.FLT
             "fgt" -> Operator.FGT

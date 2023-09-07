@@ -80,7 +80,7 @@ enum class Operator(val commutative: Boolean = false) {
     PRINT, NOP,
 
     // Extensions
-    FADD(true), FMUL(true), FDIV, FEQ(true), FGT, FLT, FGE, FLE,
+    FADD(true), FMUL(true), FDIV, FSUB, FEQ(true), FGT, FLT, FGE, FLE,
     PHI, ALLOC, STORE, LOAD, FREE, PTRADD;
 
 }
