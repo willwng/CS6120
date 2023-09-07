@@ -3,7 +3,8 @@ package climbers
 import trees.CookedProgram
 import trees.WriteInstruction
 
-class FreshNameClimber(program: CookedProgram) {
+/** A gearloop assists climbers. */
+class FreshNameGearloop(program: CookedProgram) {
     val usedNames = mutableSetOf<String>()
     var i = 0
 
