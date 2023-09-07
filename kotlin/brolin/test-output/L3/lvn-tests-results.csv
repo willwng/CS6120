@@ -1,0 +1,6 @@
+benchmark,baseline,ours,% speedup
+lvn0,7,3,57.1
+lvn1,7,4,42.9
+lvn2,5,2,60.0
+lvn3,4,4,0.0
+lvn4,7,7,0.0

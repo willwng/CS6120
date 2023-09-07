@@ -1,0 +1,11 @@
+benchmark,run,result
+lvn1,baseline,7
+lvn1,myopt,4
+lvn4,baseline,7
+lvn4,myopt,7
+lvn2,baseline,5
+lvn2,myopt,2
+lvn0,baseline,7
+lvn0,myopt,3
+lvn3,baseline,4
+lvn3,myopt,4
