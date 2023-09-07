@@ -83,6 +83,14 @@ class TreeCooker {
             "print" -> Operator.PRINT
             "nop" -> Operator.NOP
             // Extensions
+            "fadd" -> Operator.FADD
+            "fmul" -> Operator.FMUL
+            "fdiv" -> Operator.FDIV
+            "feq" -> Operator.FEQ
+            "flt" -> Operator.FLT
+            "fgt" -> Operator.FGT
+            "fle" -> Operator.FLE
+            "fge" -> Operator.FGE
             "alloc" -> Operator.ALLOC
             "free" -> Operator.FREE
             "ptradd" -> Operator.PTRADD

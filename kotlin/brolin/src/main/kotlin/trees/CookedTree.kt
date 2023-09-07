@@ -57,7 +57,7 @@ data class EffectOperation(
     val labels: List<String> = listOf(),
 ) : CookedInstruction, ReadInstruction
 
-@Serializable
+@Serializable(with = ValueOperationSerializer::class)
 data class ValueOperation(
     override val op: Operator,
     override val dest: String,
@@ -78,6 +78,7 @@ enum class Operator(val commutative: Boolean = false) {
     PRINT, NOP,
 
     // Extensions
+    FADD(true), FMUL(true), FDIV, FEQ(true), FGT, FLT, FGE, FLE,
     PHI, ALLOC, STORE, LOAD, FREE, PTRADD;
 
 }

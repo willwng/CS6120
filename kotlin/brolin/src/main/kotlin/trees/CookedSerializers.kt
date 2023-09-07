@@ -1,6 +1,8 @@
 package trees
 
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.descriptors.element
@@ -9,6 +11,9 @@ import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.encoding.encodeStructure
 import java.util.*
 
+
+// Helper serializer for handling lists of strings
+private val listSerializer = ListSerializer(String.serializer())
 
 /** Helper serializer for operators */
 object OperatorSerializer : KSerializer<Operator> {
@@ -74,7 +79,10 @@ object CookedInstructionSerializer : KSerializer<CookedInstruction> {
                 value = value
             )
 
-            is ValueOperation -> {}
+            is ValueOperation -> encoder.encodeSerializableValue(
+                serializer = ValueOperation.serializer(),
+                value = value
+            )
         }
     }
 }
@@ -82,9 +90,9 @@ object CookedInstructionSerializer : KSerializer<CookedInstruction> {
 object ConstantInstructionSerializer : KSerializer<ConstantInstruction> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("ConstantInstruction") {
         element<Operator>("op")
+        element<Value>("value")
         element<String>("dest")
         element<Type>("type")
-        element<Value>("value")
     }
 
     override fun deserialize(decoder: Decoder): ConstantInstruction {
@@ -99,25 +107,26 @@ object ConstantInstructionSerializer : KSerializer<ConstantInstruction> {
                 index = 0,
                 value = value.op
             )
-            encodeStringElement(descriptor = descriptor, index = 1, value = value.dest)
-            encodeSerializableElement(
-                descriptor = descriptor,
-                serializer = Type.serializer(),
-                index = 2,
-                value = value.type
-            )
             encodeSerializableElement(
                 descriptor = descriptor,
                 serializer = Value.serializer(),
-                index = 3,
+                index = 1,
                 value = value.value
             )
+            encodeStringElement(descriptor = descriptor, index = 2, value = value.dest)
+            encodeSerializableElement(
+                descriptor = descriptor,
+                serializer = Type.serializer(),
+                index = 3,
+                value = value.type
+            )
+
         }
     }
 }
 
 object EffectOperationSerializer : KSerializer<EffectOperation> {
-    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("ConstantInstruction") {
+    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("EffectOperation") {
         element<Operator>("op")
         element<List<String>>("args")
         element<List<String>>("funcs")
@@ -136,8 +145,76 @@ object EffectOperationSerializer : KSerializer<EffectOperation> {
                 index = 0,
                 value = value.op
             )
-
+            encodeSerializableElement(
+                descriptor = descriptor,
+                serializer = listSerializer,
+                index = 1,
+                value = value.args,
+            )
+            encodeSerializableElement(
+                descriptor = descriptor,
+                serializer = listSerializer,
+                index = 2,
+                value = value.funcs,
+            )
+            encodeSerializableElement(
+                descriptor = descriptor,
+                serializer = listSerializer,
+                index = 3,
+                value = value.labels,
+            )
         }
+    }
+}
 
+
+object ValueOperationSerializer : KSerializer<ValueOperation> {
+    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("ValueOperation") {
+        element<Operator>("op")
+        element<String>("dest")
+        element<Type>("type")
+        element<List<String>>("args")
+        element<List<String>>("funcs")
+        element<List<String>>("labels")
+    }
+
+    override fun deserialize(decoder: Decoder): ValueOperation {
+        throw (Error("Cooked value operation should not be deserialized"))
+    }
+
+    override fun serialize(encoder: Encoder, value: ValueOperation) {
+        encoder.encodeStructure(descriptor = descriptor) {
+            encodeSerializableElement(
+                descriptor = descriptor,
+                serializer = Operator.serializer(),
+                index = 0,
+                value = value.op
+            )
+            encodeStringElement(descriptor = descriptor, index = 1, value = value.dest)
+            encodeSerializableElement(
+                descriptor = descriptor,
+                serializer = Type.serializer(),
+                index = 2,
+                value = value.type
+            )
+            encodeSerializableElement(
+                descriptor = descriptor,
+                serializer = listSerializer,
+                index = 3,
+                value = value.args,
+            )
+            encodeSerializableElement(
+                descriptor = descriptor,
+                serializer = listSerializer,
+                index = 4,
+                value = value.funcs,
+            )
+            encodeSerializableElement(
+                descriptor = descriptor,
+                serializer = listSerializer,
+                index = 5,
+                value = value.labels,
+            )
+        }
     }
 }
