@@ -3,8 +3,7 @@ package trees
 import kotlinx.serialization.json.*
 
 /** Turns RawTrees into CookedTrees */
-
-class TreeCooker {
+object TreeCooker {
 
     fun cookProgram(rawProgram: RawProgram): CookedProgram =
         CookedProgram(functions = rawProgram.rawFunctions.map { func -> cookFunction(func) })
@@ -23,6 +22,13 @@ class TreeCooker {
             else -> throw (Error("Unsupported raw type"))
         }
 
+    /** Fixes the types of constants when there is ambiguity (e.g., x: float = const 42) */
+    private fun ConstantInstruction.fixConstantType() : ConstantInstruction {
+        if (type.isFloat() && value is IntValue) {
+            return ConstantInstruction(op = op, dest = dest, type = type, value = FloatValue(value.value.toFloat()))
+        }
+        return this
+    }
 
     private fun cookInstruction(rawInstruction: RawInstruction): CookedInstruction {
         when {
@@ -33,7 +39,7 @@ class TreeCooker {
                     dest = rawInstruction.dest!!,
                     type = rawInstruction.type!!,
                     value = cookValue(rawInstruction.jsonValue!!)
-                )
+                ).fixConstantType()
             }
             // Effect operation
             rawInstruction.dest == null -> {

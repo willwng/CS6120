@@ -40,6 +40,10 @@ class Type(
             "{$type:$baseType}"
         }
     }
+
+    fun isFloat(): Boolean {
+        return isFinalType() && type == "float"
+    }
 }
 
 @OptIn(ExperimentalSerializationApi::class)

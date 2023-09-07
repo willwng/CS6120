@@ -1,3 +1,6 @@
+/**
+ * A more appealing tree, easily manipulated and serializable
+ */
 package trees
 
 import kotlinx.serialization.SerialName
