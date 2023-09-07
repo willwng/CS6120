@@ -49,7 +49,7 @@ class LVNClimber : Climber {
             value: BrilValue,
             blockBuilder: MutableList<CookedInstructionOrLabel>
         ) {
-            // It is safe use the list size as the candidate fresh value number since we never remove elements
+            // It is safe to use the list size as the candidate fresh value number since we never remove elements
             val num = tupleToNum.getOrPut(value) { numToValueCanonicalVar.size }
             env[inst.dest] = num
 
@@ -83,7 +83,7 @@ class LVNClimber : Climber {
 
         /**
          * Sets `env[inst.dest]` to the appropriate value number and adds `inst` to `blockBuilder`, possibly modified to
-         * use the canonical variable. Does not modify the table.
+         * use the canonical variable. Does not modify the table, unless the value we copy from is a stranger.
          */
         fun processCopy(
             inst: ValueOperation,
