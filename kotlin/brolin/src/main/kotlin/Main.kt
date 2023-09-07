@@ -22,5 +22,6 @@ fun main() {
 
     println(dce)
 
-    println(Json.encodeToString(dce))
+    val prettyJsonPrinter = Json { prettyPrint = true }
+    println(prettyJsonPrinter.encodeToString(dce))
 }
