@@ -1,0 +1,3 @@
+#!/bin/sh
+# Run the gradle task quietly
+./gradlew run -q --console=plain

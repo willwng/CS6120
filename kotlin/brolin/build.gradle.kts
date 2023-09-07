@@ -1,6 +1,7 @@
 plugins {
     kotlin("jvm") version "1.9.0"
     kotlin("plugin.serialization") version "1.9.0"
+    application
 }
 
 group = "org.example"
@@ -32,3 +33,12 @@ tasks.test {
 kotlin {
     jvmToolchain(8)
 }
+
+application {
+    mainClass.set("MainKt")
+}
+
+tasks.named<JavaExec>("run") {
+    standardInput = System.`in`
+}
+
