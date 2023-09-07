@@ -9,17 +9,17 @@ data class Const(val value: Value) : BrilValue
 /** Represents a computed value in a Bril program. */
 data class ValueTuple(val op: Operator, val args: List<Int>) : BrilValue
 
-class LVNClimber {
+class LVNClimber : Climber {
 
-    fun lvnProgram(program: CookedProgram): List<List<BasicBlock>> {
-        val freshNames = FreshNameClimber(program)
-        val basicClimber = BlockClimber()
-        return basicClimber.basicBlocker(program).map {
-            it.map { block -> lvn(block, freshNames) }
-        }
+    // TODO always doing env[arg]!! is not always correct, because it may be defined in a basic block further down in
+    //  the file. If it is not in the env, we need to just keep the OG instn
+
+    override fun applyToProgram(program: CookedProgram): CookedProgram {
+        val freshNames = FreshNameGearloop(program)
+        return BlockSetter().applyToProgramBlocks(program) { block -> lvn(block, freshNames) }
     }
 
-    private fun lvn(basicBlock: BasicBlock, freshNames: FreshNameClimber): BasicBlock {
+    private fun lvn(basicBlock: BasicBlock, freshNames: FreshNameGearloop): BasicBlock {
         val tupleToNum: MutableMap<BrilValue, Int> = hashMapOf()  // map to value numbers
         val numToValueCanonicalVar: ArrayList<Pair<BrilValue, String>> =
             arrayListOf()  // map to value tuples, where index is value number

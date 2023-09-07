@@ -2,14 +2,13 @@ package climbers
 
 import trees.*
 
-class DCEClimber {
+class DCEClimber : Climber {
 
-    fun trivialDCEProgram(program: CookedProgram): List<List<BasicBlock>> {
-        val basicClimber = BlockClimber()
-        return basicClimber.basicBlocker(program).map {
-            it.map(::reverseDCE)
-        }
-    }
+    override fun applyToProgram(program: CookedProgram): CookedProgram = forwardDCEprogram(program)
+
+    fun forwardDCEprogram(program: CookedProgram): CookedProgram = BlockSetter().applyToProgramBlocks(program, ::forwardDCE)
+
+    fun reverseDCEprogram(program: CookedProgram): CookedProgram = BlockSetter().applyToProgramBlocks(program, ::reverseDCE)
 
     fun forwardDCE(basicBlock: BasicBlock): BasicBlock {
         var instructions = basicBlock.instructions
@@ -21,7 +20,7 @@ class DCEClimber {
             instructions.forEach { instr ->
                 result.add(instr)
                 if (instr is ReadInstruction) {
-                    instr.args.forEach{ unusedDefs.remove(it) }
+                    instr.args.forEach { unusedDefs.remove(it) }
                 }
                 if (instr is WriteInstruction) {
                     if (instr.dest in unusedDefs) {

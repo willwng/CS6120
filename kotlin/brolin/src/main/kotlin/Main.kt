@@ -1,4 +1,3 @@
-import climbers.BlockClimber
 import climbers.DCEClimber
 import climbers.LVNClimber
 import kotlinx.serialization.encodeToString
@@ -16,20 +15,12 @@ fun main() {
 //    println(Json.encodeToString(rawProgram))
 //    println(cookedProgram)
 
-    val lvn = LVNClimber()
-    val dce = DCEClimber()
-    val blocks = BlockClimber().basicBlocker(cookedProgram)
-    val lvnBlocks = lvn.lvnProgram(cookedProgram)
-    val elimBlocks = lvnBlocks.map {
-        it.map { block -> dce.reverseDCE(block) }
-    }
-    println(blocks)
-    println(lvnBlocks)
-    println(elimBlocks)
+    val dceClimber = DCEClimber()
+    val lvn = LVNClimber().applyToProgram(cookedProgram)
+    assert(dceClimber.forwardDCEprogram(lvn) == dceClimber.reverseDCEprogram(lvn))
+    val dce = dceClimber.applyToProgram(lvn)
 
-    assert(lvnBlocks.map { it.map { block -> dce.reverseDCE(block) } } == lvnBlocks.map {
-        it.map { block -> dce.forwardDCE(block) }
-    })
+    println(dce)
 
-    println(Json.encodeToString(cookedProgram))
+    println(Json.encodeToString(dce))
 }
