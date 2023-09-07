@@ -67,6 +67,8 @@ data class ValueOperation(
     val labels: List<String> = listOf()
 ) : CookedInstruction, ReadInstruction, WriteInstruction {
     override fun toString() = "$dest: $type = $op $args"
+
+    fun withArgs(newArgs: List<String>) = ValueOperation(op, dest, type, newArgs, funcs, labels)
 }
 
 @Serializable(with = OperatorSerializer::class)

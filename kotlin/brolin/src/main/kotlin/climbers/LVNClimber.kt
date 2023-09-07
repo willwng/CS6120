@@ -9,10 +9,10 @@ data class Const(val value: Value) : BrilValue
 /** Represents a computed value in a Bril program. */
 data class ValueTuple(val op: Operator, val args: List<Int>) : BrilValue
 
-class LVNClimber : Climber {
+/** Represents the value of a variable defined outside the current block. */
+data class Outsider(val variable: String) : BrilValue
 
-    // TODO always doing env[arg]!! is not always correct, because it may be defined in a basic block further down in
-    //  the file. If it is not in the env, we need to just keep the OG instn
+class LVNClimber : Climber {
 
     override fun applyToProgram(program: CookedProgram): CookedProgram {
         val freshNames = FreshNameGearloop(program)
@@ -25,8 +25,25 @@ class LVNClimber : Climber {
             arrayListOf()  // map to value tuples, where index is value number
         val env: MutableMap<String, Int> = hashMapOf()  // mapping from variable names to current value number
 
-        /** Modifies table and environment using the provided BrilValue tuple, and adds appropriate instructions
-         *  to the block. */
+        /**
+         * A stranger is an outsider we haven't seen before.
+         * This function should be called upon the first reference to a variable which was defined outside the current
+         * blocks.
+         * At the end of this function, `env[name]` is guaranteed to not be null.
+         */
+        fun processStranger(name: String) {
+            assert(env[name] == null)
+            val stranger = Outsider(name)
+            val num = tupleToNum.getOrPut(stranger) { numToValueCanonicalVar.size }
+            assert(num == numToValueCanonicalVar.size)
+            numToValueCanonicalVar.add(Pair(stranger, name))
+            env[name] = num
+        }
+
+        /**
+         * Adds `value` to the table if it is not in it already. Sets `env[inst.dest]` to the appropriate value number.
+         * Adds `inst` to `blockBuilder`, possibly modified to use canonical variables.
+         */
         fun processValue(
             inst: WriteInstruction,
             value: BrilValue,
@@ -44,14 +61,10 @@ class LVNClimber : Climber {
                     is ConstantInstruction -> blockBuilder.add(inst)
                     is ValueOperation -> {
                         blockBuilder.add(
-                            ValueOperation(
-                                op = inst.op,
-                                dest = inst.dest,
-                                type = inst.type,
-                                args = inst.args.map { numToValueCanonicalVar[env[it]!!].second },
-                                funcs = inst.funcs,
-                                labels = inst.labels
-                            )
+                            inst.withArgs(inst.args.map {
+                                if (env[it] == null) processStranger(it)  // unreachable but safer to leave it
+                                numToValueCanonicalVar[env[it]!!].second
+                            })
                         )
                     }
                 }
@@ -68,36 +81,40 @@ class LVNClimber : Climber {
             }
         }
 
+        /**
+         * Sets `env[inst.dest]` to the appropriate value number and adds `inst` to `blockBuilder`, possibly modified to
+         * use the canonical variable. Does not modify the table.
+         */
         fun processCopy(
             inst: ValueOperation,
             blockBuilder: MutableList<CookedInstructionOrLabel>
         ) {
-            assert(inst.op == Operator.ID)
-            val copy = env[inst.args[0]]
-            assert(copy != null)  // We should reference an existing variable
-            env[inst.dest] = copy!!  // Amend the environment; no need to add to the table
-            blockBuilder.add(inst)
+            assert(inst.op == Operator.ID && inst.args.size == 1)
+            val name = inst.args[0]
+            if (env[name] == null) processStranger(name)  // This is the first reference to a var defined outside
+            env[inst.dest] = env[name]!!  // Add to environment; no need to add to the table
+            blockBuilder.add(inst.withArgs(listOf(numToValueCanonicalVar[env[name]!!].second)))
         }
 
         val result: ArrayList<CookedInstructionOrLabel> =
             basicBlock.instructions.fold(initial = arrayListOf()) { acc, inst ->
                 if (inst is WriteInstruction) {
-                    val numOfOverwrittenValue = env[inst.dest]
-                    if (numOfOverwrittenValue != null) {  // we are indeed overwriting something
-                        val (value, oldCanonicalVar) = numToValueCanonicalVar[numOfOverwrittenValue]
-                        if (oldCanonicalVar == inst.dest) {
-                            // Update table to use new canonical variable
-                            val newCanonicalVar = freshNames.get(base = oldCanonicalVar)
-                            numToValueCanonicalVar[numOfOverwrittenValue] = Pair(value, newCanonicalVar)
+                    val overwrittenValue = env[inst.dest]
+                    if (overwrittenValue != null) {  // we are indeed overwriting something
+                        val (value, oldVar) = numToValueCanonicalVar[overwrittenValue]
+                        if (inst.dest == oldVar) {  // only need new var if overwriting canonical var
                             // Declare new canonical variable to be copy of old value
+                            val newVar = freshNames.get(base = oldVar)
                             acc.add(
                                 ValueOperation(
                                     op = Operator.ID,
-                                    dest = newCanonicalVar,
+                                    dest = newVar,
                                     type = inst.type,
-                                    args = listOf(oldCanonicalVar)
+                                    args = listOf(oldVar)
                                 )
                             )
+                            // Update table to use new canonical variable
+                            numToValueCanonicalVar[overwrittenValue] = Pair(value, newVar)
                         }
                     }
                 }
@@ -117,7 +134,7 @@ class LVNClimber : Climber {
                                     ValueTuple(
                                         op = inst.op,
                                         args = (if (inst.op.commutative) inst.args.sorted() else inst.args).map {
-                                            assert(env[it] != null)
+                                            if (env[it] == null) processStranger(it)
                                             env[it]!!
                                         }),
                                     acc
@@ -129,7 +146,10 @@ class LVNClimber : Climber {
                     is EffectOperation -> acc.add(
                         EffectOperation(
                             op = inst.op,
-                            args = inst.args.map { numToValueCanonicalVar[env[it]!!].second },
+                            args = inst.args.map {
+                                if (env[it] == null) processStranger(it)
+                                numToValueCanonicalVar[env[it]!!].second
+                            },
                             funcs = inst.funcs,
                             labels = inst.labels
                         )
