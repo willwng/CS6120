@@ -40,7 +40,7 @@ class TreeCooker {
                 return EffectOperation(
                     op = cookOp(rawInstruction.op),
                     args = rawInstruction.args,
-                    funcs = rawInstruction.functions,
+                    funcs = rawInstruction.funcs,
                     labels = rawInstruction.labels
                 )
 
@@ -53,7 +53,7 @@ class TreeCooker {
                     dest = rawInstruction.dest,
                     type = rawInstruction.type!!,
                     args = rawInstruction.args,
-                    funcs = rawInstruction.functions,
+                    funcs = rawInstruction.funcs,
                     labels = rawInstruction.labels
                 )
             }

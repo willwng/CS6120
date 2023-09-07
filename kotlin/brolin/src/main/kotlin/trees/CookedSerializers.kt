@@ -45,6 +45,7 @@ object ValueSerializer : KSerializer<Value> {
     }
 }
 
+/** Helper serializers for all cooked instructions */
 object CookedInstructionOrLabelSerializer : KSerializer<CookedInstructionOrLabel> {
     override val descriptor: SerialDescriptor = buildClassSerialDescriptor("InstructionOrLabel")
 

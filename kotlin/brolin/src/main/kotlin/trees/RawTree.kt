@@ -33,7 +33,7 @@ data class RawInstruction(
     val dest: String? = null,
     val type: Type? = null,
     val args: List<String> = listOf(),
-    @SerialName("funcs") val functions: List<String> = listOf(),
+    val funcs: List<String> = listOf(),
     val labels: List<String> = listOf(),
     @SerialName("value") val jsonValue: JsonPrimitive? = null,
 ) : RawInstructionOrLabel, SourcedObject()
