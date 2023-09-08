@@ -36,7 +36,7 @@ class BlockSetter {
             }).toCookedProgram()
 
     /** Converts [program] into a BlockedProgram with BlockedFunctions */
-    private fun block(program: CookedProgram): BlockedProgram =
+    fun block(program: CookedProgram): BlockedProgram =
         BlockedProgram(blockedFunctions = program.functions.map { function ->
             BlockedFunction(
                 function,
@@ -44,8 +44,8 @@ class BlockSetter {
             )
         })
 
-    /** Converts [function] into a list of basic blocks */
-    private fun block(function: CookedFunction): List<BasicBlock> {
+    /** Converts [function] into a list of basic blocks, which are guaranteed to be nonempty */
+    fun block(function: CookedFunction): List<BasicBlock> {
         val blocks: ArrayList<BasicBlock> = arrayListOf()
         var currentBlock: ArrayList<CookedInstructionOrLabel> = arrayListOf()
         function.instructions.forEach { instr ->
@@ -73,6 +73,6 @@ class BlockSetter {
         if (currentBlock.isNotEmpty()) {
             blocks.add(BasicBlock(currentBlock))
         }
-        return blocks
+        return blocks.filter{ it.instructions.isNotEmpty() }
     }
 }
