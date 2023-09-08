@@ -7,9 +7,21 @@ data class CFGNode(
     val block: BasicBlock,
     val predecessors: MutableList<CFGNode>,
     val successors: MutableList<CFGNode>
-)
+) {
+    val defines: Set<WriteInstruction> by lazy {
+        val nameToDefn = mutableMapOf<String, WriteInstruction>()
+        block.instructions.filterIsInstance<WriteInstruction>().forEach { nameToDefn[it.dest] = it }
+        nameToDefn.values.toSet()
+    }
+
+    val definedNames: Set<String> by lazy {
+        defines.map { it.dest }.toSet()
+    }
+}
 
 data class CFG(
+    /** The function from which this CFG was constructed. */
+    val function: CookedFunction,
     val entry: CFGNode,
     val nodes: MutableList<CFGNode> = mutableListOf()
 ) {
@@ -39,11 +51,12 @@ data class CFG(
                 node.successors.addAll(successors)
             }
             val entry = nodes.first()
-            return CFG(entry, nodes)
+            return CFG(function, entry, nodes)
         }
     }
 }
 
+/** A list of CFGs, each corresponding to one function. It is guaranteed that no two CFG nodes have the same name. */
 data class CFGProgram(val graphs: List<CFG>) {
     companion object {
         fun of(program: CookedProgram): CFGProgram {
