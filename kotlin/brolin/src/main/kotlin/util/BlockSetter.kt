@@ -1,4 +1,4 @@
-package climbers
+package util
 
 import trees.*
 

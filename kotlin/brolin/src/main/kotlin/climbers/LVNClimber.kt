@@ -1,6 +1,9 @@
 package climbers
 
 import trees.*
+import util.FreshNameGearLoop
+import util.BlockSetter
+import util.BasicBlock
 
 sealed interface BrilValue
 
@@ -28,11 +31,11 @@ data class ImpureValue(private val i: Int = 0) : BrilValue {
 class LVNClimber : Climber {
 
     override fun applyToProgram(program: CookedProgram): CookedProgram {
-        val freshNames = FreshNameGearloop(program)
+        val freshNames = FreshNameGearLoop(program)
         return BlockSetter().applyToProgramBlocks(program) { block -> lvn(block, freshNames) }
     }
 
-    private fun lvn(basicBlock: BasicBlock, freshNames: FreshNameGearloop): BasicBlock {
+    private fun lvn(basicBlock: BasicBlock, freshNames: FreshNameGearLoop): BasicBlock {
         val tupleToNum: MutableMap<BrilValue, Int> = hashMapOf()  // map to value numbers
         val numToValueCanonicalVar: ArrayList<Pair<BrilValue, String>> =
             arrayListOf()  // map to value tuples, where index is value number

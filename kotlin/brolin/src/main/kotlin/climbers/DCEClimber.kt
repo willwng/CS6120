@@ -1,6 +1,8 @@
 package climbers
 
 import trees.*
+import util.BasicBlock
+import util.BlockSetter
 
 class DCEClimber : Climber {
 

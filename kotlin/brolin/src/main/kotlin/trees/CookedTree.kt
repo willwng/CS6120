@@ -1,5 +1,5 @@
 /**
- * A more appealing tree, easily manipulated and serializable
+ * A more appealing tree, easily manipulated and serializable. The main underlying representation of Bril programs.
  */
 package trees
 
