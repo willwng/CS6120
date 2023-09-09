@@ -28,7 +28,7 @@ data class ImpureValue(private val i: Int = 0) : BrilValue {
     constructor() : this(get())
 }
 
-class LVNClimber : Climber {
+object LVNClimber : Climber {
 
     override fun applyToProgram(program: CookedProgram): CookedProgram {
         val freshNames = FreshNameGearLoop(program)

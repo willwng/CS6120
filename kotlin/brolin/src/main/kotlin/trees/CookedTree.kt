@@ -24,7 +24,11 @@ data class CookedFunction(
 sealed interface CookedInstructionOrLabel
 
 @Serializable
-data class CookedLabel(val label: String) : CookedInstructionOrLabel, SourcedObject()
+data class CookedLabel(val label: String) : CookedInstructionOrLabel, SourcedObject() {
+    override fun toString(): String {
+        return "$label:"
+    }
+}
 
 /** An Instruction represents a unit of computational work */
 @Serializable(with = CookedInstructionSerializer::class)
@@ -65,7 +69,7 @@ data class EffectOperation(
     val labels: List<String> = listOf(),
 ) : CookedInstruction, ReadInstruction {
     override fun toString(): String {
-        return "$op: $funcs $args"
+        return "$op: $funcs $args $labels"
     }
 }
 
@@ -79,7 +83,7 @@ data class ValueOperation(
     val funcs: List<String> = listOf(),
     val labels: List<String> = listOf()
 ) : CookedInstruction, ReadInstruction, WriteInstruction {
-    override fun toString() = "$dest: $type = $op $args"
+    override fun toString() = "$dest: $type = $op $funcs $args $labels"
 
     fun withArgs(newArgs: List<String>) = ValueOperation(op, dest, type, newArgs, funcs, labels)
 }

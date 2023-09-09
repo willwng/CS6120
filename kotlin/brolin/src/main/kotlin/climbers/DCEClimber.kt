@@ -4,7 +4,7 @@ import trees.*
 import util.BasicBlock
 import util.BlockSetter
 
-class DCEClimber : Climber {
+object DCEClimber : Climber {
 
     override fun applyToProgram(program: CookedProgram): CookedProgram = globalDCE(forwardLocalDCE(program))
 

@@ -7,24 +7,39 @@ object GraphGenerator {
         return sb.replace(Regex("\""), Regex.escapeReplacement("\\\""))
     }
 
-    private fun addNode(node: CFGNode, nodeMap: Map<CFGNode, Int>, sb: StringBuilder) {
-        sb.append("\t")
-        sb.append("node_${nodeMap[node]!!} [shape = box, label = \"${node.block.getContent()}\"]")
-        sb.appendLine()
+    private fun getNodeName(node: CFGNode, nodeMap: Map<CFGNode, Int>): String {
+        return "node_${nodeMap[node]!!}"
     }
 
-    fun createGraphOutput(cfg: CFG): StringBuilder {
-        val sb = StringBuilder()
-        sb.append("digraph ${cfg.function.name} {")
-        sb.appendLine()
+    private fun addNode(node: CFGNode, nodeMap: Map<CFGNode, Int>, dotWriter: DotWriter) {
+        dotWriter.writeNode(nodeName = getNodeName(node, nodeMap), shape = "box", label = node.block.getContent())
+    }
 
+    private fun addEdge(source: CFGNode, sink: CFGNode, nodeMap: Map<CFGNode, Int>, dotWriter: DotWriter) {
+        dotWriter.writeEdge(sourceName = getNodeName(source, nodeMap), sinkName = getNodeName(sink, nodeMap))
+    }
+
+    fun createGraphOutput(cfg: CFG): DotWriter {
+        val dotWriter = DotWriter()
+        dotWriter.startGraph(name = cfg.function.name)
+
+        // Keep track of the numbering of each CFG node
         val nodeMap = cfg.nodes.mapIndexed { i, node -> node to i }.toMap()
-        cfg.nodes.forEach { node -> addNode(node, nodeMap, sb) }
-        sb.append("}")
+        // Add the nodes, then the edges
+        cfg.nodes.forEach { node -> addNode(node = node, nodeMap = nodeMap, dotWriter = dotWriter) }
+        cfg.nodes.forEach { node ->
+            node.successors.forEach { sink ->
+                addEdge(
+                    source = node,
+                    sink = sink,
+                    nodeMap = nodeMap,
+                    dotWriter = dotWriter
+                )
+            }
+        }
+        dotWriter.writeEntryEdge(getNodeName(node = cfg.entry, nodeMap = nodeMap))
+        dotWriter.finishGraph()
 
-        println("---------------")
-        println(sb.toString())
-        println("---------------")
-        return sb
+        return dotWriter
     }
 }
