@@ -39,12 +39,8 @@ class Type(
         return if (baseType == null) {
             type
         } else {
-            "{$type:$baseType}"
+            "$type<$baseType>"
         }
-    }
-
-    fun isFloat(): Boolean {
-        return isFinalType() && type == "\"float\""
     }
 }
 

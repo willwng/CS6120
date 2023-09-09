@@ -1,9 +1,9 @@
 package climbers
 
 import trees.*
-import util.FreshNameGearLoop
-import util.BlockSetter
 import util.BasicBlock
+import util.BlockSetter
+import util.FreshNameGearLoop
 
 sealed interface BrilValue
 

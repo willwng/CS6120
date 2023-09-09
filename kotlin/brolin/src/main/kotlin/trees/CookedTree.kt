@@ -50,7 +50,11 @@ data class ConstantInstruction(
     override val dest: String,
     override val type: Type,
     val value: Value,
-) : CookedInstruction, WriteInstruction
+) : CookedInstruction, WriteInstruction {
+    override fun toString(): String {
+        return "$dest: $type = const $value"
+    }
+}
 
 /** An Effect Operation is like a Value Operation, but it does not produce a value. */
 @Serializable(with = EffectOperationSerializer::class)
@@ -59,7 +63,11 @@ data class EffectOperation(
     override val args: List<String> = listOf(),
     val funcs: List<String> = listOf(),
     val labels: List<String> = listOf(),
-) : CookedInstruction, ReadInstruction
+) : CookedInstruction, ReadInstruction {
+    override fun toString(): String {
+        return "$op: $funcs $args"
+    }
+}
 
 /** A Value Operation is an instruction that takes arguments, does some computation, and produces a value */
 @Serializable(with = ValueOperationSerializer::class)
@@ -87,6 +95,10 @@ enum class Operator(val commutative: Boolean = false) {
     // Extensions
     FADD(true), FMUL(true), FDIV, FSUB, FEQ(true), FGT, FLT, FGE, FLE,
     PHI, ALLOC, STORE, LOAD, FREE, PTRADD;
+
+    override fun toString(): String {
+        return super.toString().lowercase()
+    }
 }
 
 
@@ -95,9 +107,21 @@ enum class Operator(val commutative: Boolean = false) {
 sealed interface Value
 
 @Serializable
-data class BooleanValue(val value: Boolean) : Value
+data class BooleanValue(val value: Boolean) : Value {
+    override fun toString(): String {
+        return "$value"
+    }
+}
 
-data class IntValue(val value: BigInteger) : Value
+data class IntValue(val value: BigInteger) : Value {
+    override fun toString(): String {
+        return "$value"
+    }
+}
 
 @Serializable
-data class FloatValue(val value: Float) : Value
+data class FloatValue(val value: Float) : Value {
+    override fun toString(): String {
+        return "$value"
+    }
+}

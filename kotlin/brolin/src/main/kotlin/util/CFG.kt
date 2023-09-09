@@ -17,6 +17,14 @@ data class CFGNode(
     val definedNames: Set<String> by lazy {
         defines.map { it.dest }.toSet()
     }
+
+    override fun equals(other: Any?): Boolean {
+        return other === this
+    }
+
+    override fun hashCode(): Int {
+        return super.hashCode()
+    }
 }
 
 data class CFG(
