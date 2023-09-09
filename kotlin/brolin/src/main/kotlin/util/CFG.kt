@@ -52,7 +52,7 @@ data class CFG(
                 val successors: List<CFGNode> = when {
                     last is EffectOperation && last.op == Operator.JMP -> listOf(labelToNode[last.labels[0]]!!)
                     last is EffectOperation && last.op == Operator.BR ->
-                        last.labels.drop(1).map { arg -> labelToNode[arg]!! }
+                        last.labels.map { label -> labelToNode[label]!! }
                     else -> if (i + 1 != nodes.size) listOf(nodes[i + 1]) else listOf()
                 }
                 successors.forEach { succ -> succ.predecessors.add(node) }
