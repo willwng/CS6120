@@ -7,6 +7,8 @@ object ReachingDefs {
     class ReachingDefsBeta : DataflowBeta<ReachingDefsBeta.ReachingDefs> {
         data class ReachingDefs(val defs: Set<WriteInstruction>) : DataflowValue
 
+        override val forward = true
+
         override val init: ReachingDefs = ReachingDefs(setOf())
 
         override fun merge(predecessors: List<ReachingDefs>): ReachingDefs =

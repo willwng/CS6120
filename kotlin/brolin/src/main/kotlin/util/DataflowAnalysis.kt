@@ -9,6 +9,7 @@ interface DataflowBeta<T : DataflowValue> {
     val init: T
     fun merge(predecessors: List<T>): T
     fun transfer(node: CFGNode, inEdge: T): T
+    val forward: Boolean
 }
 
 class DataflowAnalysis<T : DataflowValue>(private val beta: DataflowBeta<T>) {
@@ -29,6 +30,7 @@ class DataflowAnalysis<T : DataflowValue>(private val beta: DataflowBeta<T>) {
         }
 
     private fun forwardWorklist(cfg: CFG): DataflowResult<T> {
+        assert (beta.forward)
         val worklist = mutableListOf<CFGNode>()
         val inValue = mutableMapOf<CFGNode, T>()
         val outValue = mutableMapOf<CFGNode, T>()
