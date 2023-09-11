@@ -49,7 +49,7 @@ sealed interface ReadInstruction : CookedInstruction {
 
 @Serializable(with = ConstantInstructionSerializer::class)
 /** A Constant is an instruction that produces a literal value */
-data class ConstantInstruction(
+class ConstantInstruction(
     override val op: Operator = Operator.CONST,
     override val dest: String,
     override val type: Type,
@@ -62,7 +62,7 @@ data class ConstantInstruction(
 
 /** An Effect Operation is like a Value Operation, but it does not produce a value. */
 @Serializable(with = EffectOperationSerializer::class)
-data class EffectOperation(
+class EffectOperation(
     override val op: Operator,
     override val args: List<String> = listOf(),
     val funcs: List<String> = listOf(),
@@ -75,7 +75,7 @@ data class EffectOperation(
 
 /** A Value Operation is an instruction that takes arguments, does some computation, and produces a value */
 @Serializable(with = ValueOperationSerializer::class)
-data class ValueOperation(
+class ValueOperation(
     override val op: Operator,
     override val dest: String,
     override val type: Type,

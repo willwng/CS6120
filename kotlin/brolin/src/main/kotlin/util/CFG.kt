@@ -17,6 +17,8 @@ class CFGNode(
     val definedNames: Set<String> by lazy {
         defines.map { it.dest }.toSet()
     }
+
+    override fun toString() = block.toString()
 }
 
 data class CFG(
