@@ -27,6 +27,7 @@ class DataflowAnalysis<T : DataflowValue>(private val beta: DataflowBeta<T>) {
         worklist.addAll(cfg.nodes)
         while (worklist.isNotEmpty()) {
             val b = worklist.first()
+            worklist.removeFirst()
             inValue[b] = beta.merge(b.predecessors.mapNotNull { outValue[it] })
             val newOut = beta.transfer(b, inValue[b]!!)
             if (newOut != outValue[b]) worklist.addAll(b.successors)
