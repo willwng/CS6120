@@ -1,0 +1,39 @@
+**Summary**
+
+- We (Vivian and I) did our implementation in Kotlin. We wanted to future-proof/set up infrastructure, namely parsing JSON into our own data classes
+- We hope this will help out for future implementation tasks (but took non-negligible time compared to work on the actual optimizations)
+- We implemented local and global trivial DCE and LVN. This enabled CSE and copy propagation, which we built into the LVN pass.
+
+**Implementation details**
+
+- We first parse the JSON into our own data classes; this allowed neat features such as distinguishing between all types
+of instructions and values. We had to write custom serializers, so we could output our data structures back into JSON
+- We then implemented trivial local DCE based on pseudocode shown in class. We decided to do a forward-pass approach
+after giving up on our backward-pass approach. We eventually found our mistakes and compared our results between the two
+to make sure they matched.
+- Then, we worked on LVN.
+- We maintained a couple different notions of values that need to be recorded: constants
+and computed tuples as discussed in class, as well as types representing a value that was defined outside the block,
+and impure values. We kept track of impure values purely because it made it easier to record when existing
+equivalences were broken; however, no impure values ever alias one another as a result of numbering.
+- To handle overwriting, each time a canonical variable is about to be overwritten, we store it in a new canonical
+variable defined at that point. This sometimes creates extraneous definitions, but we can easily remove them again
+with trivial DCE. We also considered maintaining a set of variables pointing to each value, or scanning through the
+environment to find backup canonical variables before creating new ones. However, we decided since a DCE pass occurs
+after LVN anyway, it seems a little cheaper and simpler to just remove extraneous definitions later.
+- After doing this, we realized LVN combined with trivial local DCE was quite weak, since the assumption that all variables are live upon exiting a basic block meant that almost no definitions were removed. So we also implemented global DCE, which is stronger in that it can view the entire program, but weaker in that if it sees any variable being used, it preserves all definitions of it. It turned out that using both local and global DCE after LVN/CSE/copy propogation produced much better results.
+
+**How did you test it? Which test inputs did you use? Do you have any quantitative results to report?**
+
+- For LVN, we also printed handy tables: this allowed us to compare results to our handmade tests and ones shown in
+class.
+- We first used tests we wrote ourselves targeting things like copy propagation, references to variables not defined in
+the same block, CSE enabling more DCE, and checking that overwritten variables are stored in fresh names.
+- We then ran brench on all the benchmarks in the bril repo, where we found our results agree for all
+(except "function_call" which timed out for both the optimized and unoptimized case)
+- We also found an average of 10.2% less dynamic instructions for the benchmarks after our optimizations:
+
+**What was the hardest part of the task? How did you solve this problem?**
+
+- Parsing big integers was annoying in Kotlin; some tests had integers that wouldn't fit into the typical Kotlin int
+- We had one issue with floating point accuracy (around 1e-6) for the "cordic.bril" test

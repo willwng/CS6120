@@ -1,0 +1,29 @@
+[LINK CODE HERE]
+
+**Summary**
+
+- We (Vivian and I) did our implementation in Kotlin.
+- We implemented CFG construction and Graphviz visualization. Visualizations helped us confirm CFG construction was
+reasonable, and they will hopefully give us a nice view of the results of optimizations in the future.
+- We then wrote a generic solver that supports multiple dataflow analyses, and applied it to a reaching definitions
+analysis.
+
+**Implementation details**
+
+[Describe CFG visualizations]
+- Then, we implemented a generic dataflow solver. The solver is generic over dataflow values, and takes in a description
+of the analysis containing the init, merge, and transfer functions. Class design was a little tricky, but the worklist
+algorithm itself was pretty much line-for-line equivalent to the pseudocode from lecture.
+- We wrote a reaching definitions analysis. This was also rather straightforward due to the simple interface to the
+dataflow solver. We noticed that kill(node) is context-dependent; the instructions in kill(node) are the reaching defs
+which share a variable name with an instruction in defines(node).
+
+**How did you test it? Which test inputs did you use? Do you have any quantitative results to report?**
+
+- Having visualizations for CFGs helped us verify that the graphs we generated were correct.
+- For testing the reaching definitions analysis, we used the tests in bril/examples/test/df, as well as tests that we
+wrote ourselves. We manually checked that the output was correct.
+
+**What was the hardest part of the task? How did you solve this problem?**
+
+[TODO]
