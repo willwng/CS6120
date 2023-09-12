@@ -2,9 +2,9 @@ package util
 
 import trees.WriteInstruction
 import util.DataflowAnalysis.DataflowResult
-import util.ReachingDefs.ReachingDefsBeta.ReachingDefs
+import util.ReachingDefsAnalysis.ReachingDefsBeta.ReachingDefs
 
-object ReachingDefs {
+object ReachingDefsAnalysis {
     class ReachingDefsBeta : DataflowBeta<ReachingDefs> {
         data class ReachingDefs(val defs: Set<WriteInstruction>) : DataflowValue
 
@@ -12,8 +12,8 @@ object ReachingDefs {
 
         override val init: ReachingDefs = ReachingDefs(setOf())
 
-        override fun merge(predecessors: List<ReachingDefs>): ReachingDefs =
-            ReachingDefs(predecessors.fold(setOf()) { acc, pred -> acc.union(pred.defs) })
+        override fun merge(influencers: List<ReachingDefs>): ReachingDefs =
+            ReachingDefs(influencers.fold(setOf()) { acc, pred -> acc.union(pred.defs) })
 
         override fun transfer(node: CFGNode, inEdge: ReachingDefs): ReachingDefs {
             val defsIn = mutableMapOf<String, WriteInstruction>()

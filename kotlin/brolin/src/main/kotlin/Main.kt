@@ -4,7 +4,8 @@ import trees.RawProgram
 import trees.TreeCooker
 import util.CFGProgram
 import util.GraphGenerator
-import util.ReachingDefs
+import util.LiveVariablesAnalysis
+import util.ReachingDefsAnalysis
 import java.io.FileOutputStream
 import java.io.PrintWriter
 
@@ -25,12 +26,20 @@ fun main() {
 
 //    assert(dceClimber.forwardLocalDCE(lvn) == dceClimber.reverseLocalDCE(lvn))
     val cfgProgram = CFGProgram.of(cookedProgram)
-    val reachingDefsAnalysis = ReachingDefs.analyze(cfgProgram)
+    val reachingDefsAnalysis = ReachingDefsAnalysis.analyze(cfgProgram)
+    val liveVarsAnalysis = LiveVariablesAnalysis.analyze(cfgProgram)
     cfgProgram.graphs.forEach {
         val out = PrintWriter(FileOutputStream("${it.function.name}.dot"))
         GraphGenerator.createGraphOutput(it, reachingDefsAnalysis[it.function.name]).writeToFile(out)
         out.close()
     }
+    cfgProgram.graphs.forEach {
+        val out = PrintWriter(FileOutputStream("${it.function.name}-live.dot"))
+        GraphGenerator.createGraphOutput(it, liveVarsAnalysis[it.function.name]).writeToFile(out)
+        out.close()
+    }
     println(reachingDefsAnalysis)
+    println("---------")
+    println(liveVarsAnalysis)
 
 }
