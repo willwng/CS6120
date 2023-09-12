@@ -2,7 +2,7 @@ package util
 
 import trees.*
 
-class CFGNode(
+open class CFGNode(
     val name: String,
     val block: BasicBlock,
     val predecessors: MutableList<CFGNode>,
@@ -19,19 +19,28 @@ class CFGNode(
     }
 
     override fun toString() = block.toString()
+
+    companion object EmptyCFG : CFGNode(
+        name = "Empty",
+        block = BasicBlock(listOf()),
+        successors = mutableListOf(),
+        predecessors = mutableListOf()
+    )
 }
 
+/** A class to represent a control-flow graph of a function */
 data class CFG(
-    /** The function from which this CFG was constructed. */
+    // The function from which this CFG was constructed
     val function: CookedFunction,
     val entry: CFGNode,
-    val nodes: MutableList<CFGNode> = mutableListOf()
+    val nodes: MutableList<out CFGNode> = mutableListOf()
 ) {
     companion object {
         fun of(function: CookedFunction, freshLabels: FreshLabelGearLoop): CFG {
             val labelToNode = mutableMapOf<String, CFGNode>()
             val nodes = mutableListOf<CFGNode>()
             val fnName = function.name
+
             // Initialize nodes
             BlockSetter().block(function).forEach { block ->
                 val first = block.instructions.first()
@@ -47,13 +56,14 @@ data class CFG(
                     last is EffectOperation && last.op == Operator.JMP -> listOf(labelToNode[last.labels[0]]!!)
                     last is EffectOperation && last.op == Operator.BR ->
                         last.labels.map { label -> labelToNode[label]!! }
+                    // Handle potential fall-through
                     else -> if (i + 1 != nodes.size) listOf(nodes[i + 1]) else listOf()
                 }
                 successors.forEach { succ -> succ.predecessors.add(node) }
                 node.successors.addAll(successors)
             }
-            val entry = nodes.first()
-            return CFG(function, entry, nodes)
+            val entry = nodes.firstOrNull() ?: CFGNode.EmptyCFG
+            return CFG(function, entry, nodes.ifEmpty { mutableListOf(CFGNode.EmptyCFG) })
         }
     }
 }
