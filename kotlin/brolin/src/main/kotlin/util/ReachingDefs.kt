@@ -1,10 +1,11 @@
 package util
 
-import trees.CookedProgram
 import trees.WriteInstruction
+import util.DataflowAnalysis.DataflowResult
+import util.ReachingDefs.ReachingDefsBeta.ReachingDefs
 
 object ReachingDefs {
-    class ReachingDefsBeta : DataflowBeta<ReachingDefsBeta.ReachingDefs> {
+    class ReachingDefsBeta : DataflowBeta<ReachingDefs> {
         data class ReachingDefs(val defs: Set<WriteInstruction>) : DataflowValue
 
         override val forward = true
@@ -22,6 +23,6 @@ object ReachingDefs {
         }
     }
 
-    fun analyze(program: CookedProgram): Map<String, DataflowAnalysis.DataflowResult<ReachingDefsBeta.ReachingDefs>> =
+    fun analyze(program: CFGProgram): Map<String, DataflowResult<ReachingDefs>> =
         DataflowAnalysis(ReachingDefsBeta()).applyToProgram(program)
 }

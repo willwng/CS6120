@@ -1,10 +1,5 @@
-import climbers.DCEClimber
-import climbers.LVNClimber
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromJsonElement
-import trees.RawInstruction
-import trees.RawLabel
 import trees.RawProgram
 import trees.TreeCooker
 import util.CFGProgram
@@ -29,12 +24,13 @@ fun main() {
 //    val dce2 = DCEClimber.applyToProgram(lvn2)
 
 //    assert(dceClimber.forwardLocalDCE(lvn) == dceClimber.reverseLocalDCE(lvn))
-//    val cfg = CFGProgram.of(cookedProgram)
-//    cfg.graphs.forEach {
-//        val out = PrintWriter(FileOutputStream("${it.function.name}.dot"))
-//        GraphGenerator.createGraphOutput(it).writeToFile(out)
-//        out.close()
-//    }
-    println(ReachingDefs.analyze(cookedProgram))
+    val cfgProgram = CFGProgram.of(cookedProgram)
+    val reachingDefsAnalysis = ReachingDefs.analyze(cfgProgram)
+    cfgProgram.graphs.forEach {
+        val out = PrintWriter(FileOutputStream("${it.function.name}.dot"))
+        GraphGenerator.createGraphOutput(it, reachingDefsAnalysis[it.function.name]).writeToFile(out)
+        out.close()
+    }
+    println(reachingDefsAnalysis)
 
 }

@@ -33,7 +33,7 @@ data class CFG(
     // The function from which this CFG was constructed
     val function: CookedFunction,
     val entry: CFGNode,
-    val nodes: MutableList<out CFGNode> = mutableListOf()
+    val nodes: MutableList<CFGNode> = mutableListOf()
 ) {
     companion object {
         fun of(function: CookedFunction, freshLabels: FreshLabelGearLoop): CFG {
@@ -63,7 +63,7 @@ data class CFG(
                 node.successors.addAll(successors)
             }
             val entry = nodes.firstOrNull() ?: CFGNode.EmptyCFG
-            return CFG(function, entry, nodes.ifEmpty { mutableListOf(CFGNode.EmptyCFG) })
+            return CFG(function, entry, if (nodes.isNotEmpty()) nodes else mutableListOf(CFGNode.EmptyCFG))
         }
     }
 }

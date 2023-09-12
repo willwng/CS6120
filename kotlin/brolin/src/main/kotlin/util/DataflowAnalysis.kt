@@ -1,7 +1,5 @@
 package util
 
-import trees.CookedProgram
-
 interface DataflowValue
 
 /** The beta describes how climbers complete a pass. */
@@ -24,25 +22,22 @@ class DataflowAnalysis<T : DataflowValue>(private val beta: DataflowBeta<T>) {
         }
     }
 
-    fun applyToProgram(program: CookedProgram): Map<String, DataflowResult<T>> =
-        CFGProgram.of(program).graphs.associate {
+    fun applyToProgram(program: CFGProgram): Map<String, DataflowResult<T>> =
+        program.graphs.associate {
             it.function.name to forwardWorklist(it)
         }
 
+    /** A generic worklist algorithm used for solving forward data flow problems */
     private fun forwardWorklist(cfg: CFG): DataflowResult<T> {
-        assert (beta.forward)
-        val worklist = mutableListOf<CFGNode>()
+        assert(beta.forward)
+        val worklist = cfg.nodes.toMutableList()
+        // Information stored on in/out edges of each node (initialized to init)
         val inValue = mutableMapOf<CFGNode, T>()
         val outValue = mutableMapOf<CFGNode, T>()
+        cfg.nodes.forEach { inValue[it] = beta.init; outValue[it] = beta.init }
 
-//        inValue[cfg.entry] = beta.init
-        // TODO the above line was in class pseudocode, but is anything wrong with the below instead?
-        cfg.nodes.forEach { inValue[it] = beta.init }
-        cfg.nodes.forEach { outValue[it] = beta.init }
-        worklist.addAll(cfg.nodes)
         while (worklist.isNotEmpty()) {
-            val b = worklist.first()
-            worklist.removeFirst()
+            val b = worklist.removeFirst()
             inValue[b] = beta.merge(b.predecessors.mapNotNull { outValue[it] })
             val newOut = beta.transfer(b, inValue[b]!!)
             if (newOut != outValue[b]) worklist.addAll(b.successors)
