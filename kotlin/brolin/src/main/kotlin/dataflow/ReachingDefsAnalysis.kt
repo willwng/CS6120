@@ -1,8 +1,8 @@
-package util
+package dataflow
 
 import trees.WriteInstruction
-import util.DataflowAnalysis.DataflowResult
-import util.ReachingDefsAnalysis.ReachingDefsBeta.ReachingDefs
+import dataflow.ReachingDefsAnalysis.ReachingDefsBeta.ReachingDefs
+import util.*
 
 object ReachingDefsAnalysis {
     class ReachingDefsBeta : DataflowBeta<ReachingDefs> {
@@ -23,6 +23,6 @@ object ReachingDefsAnalysis {
         }
     }
 
-    fun analyze(program: CFGProgram): Map<String, DataflowResult<ReachingDefs>> =
+    fun analyze(program: CFGProgram): Map<String, DataflowAnalysis.DataflowResult<ReachingDefs>> =
         DataflowAnalysis(ReachingDefsBeta()).applyToProgram(program)
 }

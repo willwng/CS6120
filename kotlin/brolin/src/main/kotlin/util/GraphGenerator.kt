@@ -1,6 +1,6 @@
 package util
 
-import util.DataflowAnalysis.DataflowResult
+import dataflow.DataflowAnalysis.DataflowResult
 
 object GraphGenerator {
     private fun String.fixStringQuotes(): String {

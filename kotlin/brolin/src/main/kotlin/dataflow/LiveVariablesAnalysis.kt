@@ -1,9 +1,9 @@
-package util
+package dataflow
 
 import trees.ReadInstruction
 import trees.WriteInstruction
-import util.DataflowAnalysis.DataflowResult
-import util.LiveVariablesAnalysis.LiveVariablesBeta.LiveVars
+import dataflow.LiveVariablesAnalysis.LiveVariablesBeta.LiveVars
+import util.*
 
 object LiveVariablesAnalysis {
     class LiveVariablesBeta : DataflowBeta<LiveVars> {
@@ -30,6 +30,6 @@ object LiveVariablesAnalysis {
 
     }
 
-    fun analyze(program: CFGProgram): Map<String, DataflowResult<LiveVars>> =
+    fun analyze(program: CFGProgram): Map<String, DataflowAnalysis.DataflowResult<LiveVars>> =
         DataflowAnalysis(LiveVariablesBeta()).applyToProgram(program)
 }

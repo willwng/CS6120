@@ -4,8 +4,10 @@ import trees.RawProgram
 import trees.TreeCooker
 import util.CFGProgram
 import util.GraphGenerator
-import util.LiveVariablesAnalysis
-import util.ReachingDefsAnalysis
+import dataflow.LiveVariablesAnalysis
+import dataflow.ReachingDefsAnalysis
+import dataflow.LiveVariablesAnalysis.LiveVariablesBeta.LiveVars
+import dataflow.ReachingDefsAnalysis.ReachingDefsBeta.ReachingDefs
 import java.io.FileOutputStream
 import java.io.PrintWriter
 
@@ -30,12 +32,15 @@ fun main() {
     val liveVarsAnalysis = LiveVariablesAnalysis.analyze(cfgProgram)
     cfgProgram.graphs.forEach {
         val out = PrintWriter(FileOutputStream("${it.function.name}.dot"))
-        GraphGenerator.createGraphOutput(it, reachingDefsAnalysis[it.function.name]).writeToFile(out)
+        GraphGenerator.createGraphOutput<ReachingDefs>(
+            it,
+            reachingDefsAnalysis[it.function.name]
+        ).writeToFile(out)
         out.close()
     }
     cfgProgram.graphs.forEach {
         val out = PrintWriter(FileOutputStream("${it.function.name}-live.dot"))
-        GraphGenerator.createGraphOutput(it, liveVarsAnalysis[it.function.name]).writeToFile(out)
+        GraphGenerator.createGraphOutput<LiveVars>(it, liveVarsAnalysis[it.function.name]).writeToFile(out)
         out.close()
     }
     println(reachingDefsAnalysis)
