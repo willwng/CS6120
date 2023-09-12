@@ -14,16 +14,8 @@ open class CFGNode(
         nameToDefn.values.toSet()
     }
 
-    val uses: Set<ReadInstruction> by lazy {
-        block.instructions.filterIsInstance<ReadInstruction>().toSet()
-    }
-
     val definedNames: Set<String> by lazy {
         defines.map { it.dest }.toSet()
-    }
-
-    val usedNames: Set<String> by lazy {
-        uses.map { it.args }.flatten().toSet()
     }
 
     override fun toString() = block.toString()

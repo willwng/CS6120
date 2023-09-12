@@ -24,7 +24,8 @@ object GraphGenerator {
         prologue: String = "",
         epilogue: String = ""
     ) {
-        val content = prologue.fixStringQuotes() + "\\l" + node.block.getContent() + epilogue.fixStringQuotes()
+        val content =
+            prologue.fixStringQuotes() + "\\l\\l" + node.block.getContent() + "\\l" + epilogue.fixStringQuotes()
         dotWriter.writeNode(nodeName = getNodeName(node, nodeMap), shape = "box", label = content)
     }
 
