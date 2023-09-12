@@ -1,13 +1,14 @@
+import dataflow.ConstantPropAnalysis
+import dataflow.LiveVariablesAnalysis
+import dataflow.LiveVariablesAnalysis.LiveVariablesBeta.LiveVars
+import dataflow.ReachingDefsAnalysis
+import dataflow.ReachingDefsAnalysis.ReachingDefsBeta.ReachingDefs
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromJsonElement
 import trees.RawProgram
 import trees.TreeCooker
 import util.CFGProgram
 import util.GraphGenerator
-import dataflow.LiveVariablesAnalysis
-import dataflow.ReachingDefsAnalysis
-import dataflow.LiveVariablesAnalysis.LiveVariablesBeta.LiveVars
-import dataflow.ReachingDefsAnalysis.ReachingDefsBeta.ReachingDefs
 import java.io.FileOutputStream
 import java.io.PrintWriter
 
@@ -16,7 +17,7 @@ fun main() {
     val jsonElement = Json.parseToJsonElement(input)
     val rawProgram = Json.decodeFromJsonElement<RawProgram>(jsonElement)
     val cookedProgram = TreeCooker.cookProgram(rawProgram)
-    val prettyJsonPrinter = Json { prettyPrint = true }
+//    val prettyJsonPrinter = Json { prettyPrint = true }
 //    println(prettyJsonPrinter.encodeToString(cookedProgram))
 //    println(Json.encodeToString(rawProgram))
 //    println(cookedProgram)
@@ -30,6 +31,7 @@ fun main() {
     val cfgProgram = CFGProgram.of(cookedProgram)
     val reachingDefsAnalysis = ReachingDefsAnalysis.analyze(cfgProgram)
     val liveVarsAnalysis = LiveVariablesAnalysis.analyze(cfgProgram)
+    val constantPropAnalysis = ConstantPropAnalysis.analyze(cfgProgram)
     cfgProgram.graphs.forEach {
         val out = PrintWriter(FileOutputStream("${it.function.name}.dot"))
         GraphGenerator.createGraphOutput<ReachingDefs>(
@@ -41,6 +43,14 @@ fun main() {
     cfgProgram.graphs.forEach {
         val out = PrintWriter(FileOutputStream("${it.function.name}-live.dot"))
         GraphGenerator.createGraphOutput<LiveVars>(it, liveVarsAnalysis[it.function.name]).writeToFile(out)
+        out.close()
+    }
+    cfgProgram.graphs.forEach {
+        val out = PrintWriter(FileOutputStream("${it.function.name}-cp.dot"))
+        GraphGenerator.createGraphOutput(
+            it,
+            constantPropAnalysis[it.function.name]
+        ).writeToFile(out)
         out.close()
     }
     println(reachingDefsAnalysis)
