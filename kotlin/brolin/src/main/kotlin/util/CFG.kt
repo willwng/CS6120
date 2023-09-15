@@ -56,6 +56,7 @@ data class CFG(
                     last is EffectOperation && last.op == Operator.JMP -> listOf(labelToNode[last.labels[0]]!!)
                     last is EffectOperation && last.op == Operator.BR ->
                         last.labels.map { label -> labelToNode[label]!! }
+                    last is EffectOperation && last.op == Operator.RET -> listOf()
                     // Handle potential fall-through
                     else -> if (i + 1 != nodes.size) listOf(nodes[i + 1]) else listOf()
                 }
