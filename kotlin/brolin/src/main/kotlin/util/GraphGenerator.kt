@@ -1,6 +1,7 @@
 package util
 
 import dataflow.DataflowAnalysis.DataflowResult
+import dataflow.DominatorTree
 
 object GraphGenerator {
     private fun String.fixStringQuotes(): String {
@@ -68,6 +69,34 @@ object GraphGenerator {
             }
         }
         dotWriter.writeEntryEdge(getNodeName(node = cfg.entry, nodeMap = nodeMap))
+        dotWriter.finishGraph()
+
+        return dotWriter
+    }
+
+    fun createDominatorTreeOutput(dominatorTree: DominatorTree) : DotWriter {
+        val dotWriter = DotWriter()
+        dotWriter.startGraph(name = dominatorTree.cfg.function.name + "_dominator")
+        val nodeMap = dominatorTree.nodes.map { it.cfgNode }.mapIndexed { i, node -> node to i }.toMap()
+
+        dominatorTree.nodes.forEach {
+            addNode(
+                node = it.cfgNode,
+                nodeMap = nodeMap,
+                dotWriter = dotWriter
+            )
+        }
+        dominatorTree.nodes.forEach { node ->
+            node.dominated.forEach {dom ->
+                addEdge(
+                    source = dom.cfgNode,
+                    sink = node.cfgNode,
+                    nodeMap = nodeMap,
+                    dotWriter = dotWriter
+                )
+            }
+        }
+        dotWriter.writeEntryEdge(getNodeName(node = dominatorTree.entry.cfgNode, nodeMap = nodeMap))
         dotWriter.finishGraph()
 
         return dotWriter

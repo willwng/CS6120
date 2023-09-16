@@ -1,4 +1,5 @@
 import dataflow.ConstantPropAnalysis
+import dataflow.DominatorsAnalysis
 import dataflow.LiveVariablesAnalysis
 import dataflow.LiveVariablesAnalysis.LiveVariablesBeta.LiveVars
 import dataflow.ReachingDefsAnalysis
@@ -53,6 +54,14 @@ fun main() {
         ).writeToFile(out)
         out.close()
     }
+
+    val dominatorAnalysis = DominatorsAnalysis.analyze(cfgProgram)
+    cfgProgram.graphs.forEach {
+        val out = PrintWriter(FileOutputStream("${it.function.name}-dominator.dot"))
+        GraphGenerator.createDominatorTreeOutput(dominatorTree = dominatorAnalysis[it.function.name]!!).writeToFile(out)
+        out.close()
+    }
+
     println(reachingDefsAnalysis)
     println("---------")
     println(liveVarsAnalysis)
