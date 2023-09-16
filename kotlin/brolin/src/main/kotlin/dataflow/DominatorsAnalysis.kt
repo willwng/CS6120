@@ -8,6 +8,10 @@ typealias DominatorMap = Map<CFGNode, Set<CFGNode>>
 
 object DominatorsAnalysis {
 
+    /**
+     * Builds a DominatorTree from the given dominators.
+     * Requires dominators to be a map from nodes to its immediate dominators
+     */
     private fun buildTree(cfg: CFG, dominators: DominatorMap): DominatorTree {
         // Convert each CFG node to a dominator tree node
         val dominatorNodesMap = cfg.nodes.associateWith { DominatorTreeNode(cfgNode = it) }
@@ -24,12 +28,11 @@ object DominatorsAnalysis {
         )
     }
 
-    private fun analyze(cfg: CFG): DominatorTree {
-        // Map from a node to its dominators
+    /** Gets the dominators for the given CFG (maps from node to its dominators) */
+    private fun getDominators(cfg: CFG): Pair<DominatorMap, DominatorMap> {
+        // Maintain a from a node to its dominators, and a map from a node to its dominated nodes
         val nodeToDominators = cfg.nodes.associateWith { _ -> setOf<CFGNode>() }.toMutableMap()
-        // Map from a node to the nodes that it STRICTLY dominates
-        val nodeToStrictDom = nodeToDominators.toMutableMap()
-
+        val nodeToDominated = nodeToDominators.toMutableMap()
         var changed = true
         while (changed) {
             changed = false
@@ -43,20 +46,32 @@ object DominatorsAnalysis {
                 val newDominators = predDominators union setOf(node)
                 if (prevDominators != newDominators) changed = true
                 nodeToDominators[node] = newDominators
-                newDominators.filter { it != node }
-                    .forEach { nodeToStrictDom[it] = nodeToStrictDom[it]!!.union(setOf(node)) }
+                newDominators.forEach { nodeToDominated[it] = nodeToDominated[it]!!.union(setOf(node)) }
             }
         }
-        // Create a map of strict dominators
-        val strictDominators = nodeToDominators.toMutableMap()
-        strictDominators.forEach { (node, dom) -> strictDominators[node] = dom.filter { it != node }.toSet() }
+        return Pair(nodeToDominators, nodeToDominated)
+    }
+
+    /** Converts a dominator map to a strict dominator map */
+    private fun DominatorMap.toStrict(): DominatorMap {
+        val strictMap = this.toMutableMap()
+        strictMap.forEach { (node, dom) -> strictMap[node] = dom.filter { it != node }.toSet() }
+        return strictMap
+    }
+
+    /** Creates a dominator tree for the given CFG */
+    private fun analyze(cfg: CFG): DominatorTree {
+        val (nodeToDominators, nodeToDominated) = getDominators(cfg = cfg)
+        // Convert to strict dominators
+        val nodeToStrictDominators = nodeToDominators.toStrict()
+        val nodeToStrictDominated = nodeToDominated.toStrict()
 
         // Convert map to immediate dominators
         // for each dominator: we check if it dominates any of the other dominators
-        val immediateDominators = strictDominators.toMutableMap()
+        val immediateDominators = nodeToStrictDominators.toMutableMap()
         immediateDominators.forEach { (node, dom) ->
             immediateDominators[node] = dom.filter { potDom ->
-                (dom.map { otherDom -> otherDom !in nodeToStrictDom[potDom]!! }).fold(true) { acc, it -> acc && it }
+                (dom.map { otherDom -> otherDom !in nodeToStrictDominated[potDom]!! }).fold(true) { acc, it -> acc && it }
             }.toSet()
         }
 
@@ -80,6 +95,6 @@ data class DominatorTree(
 class DominatorTreeNode(
     val cfgNode: CFGNode,
 ) {
-    // The list of nodes that this node is strictly dominated by
+    // The list of nodes that this node is immediately dominated by
     lateinit var dominated: Set<DominatorTreeNode>
 }
