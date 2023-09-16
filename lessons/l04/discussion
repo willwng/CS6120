@@ -1,29 +1,39 @@
-[LINK CODE HERE]
+[Analysis Code](https://github.com/willwng/CS6120/tree/main/kotlin/brolin/src/main/kotlin/dataflow) and [CFG Code](https://github.com/willwng/CS6120/tree/main/kotlin/brolin/src/main/kotlin/util)
 
 **Summary**
 
 - We (Vivian and I) did our implementation in Kotlin.
 - We implemented CFG construction and Graphviz visualization. Visualizations helped us confirm CFG construction was
 reasonable, and they will hopefully give us a nice view of the results of optimizations in the future.
-- We then wrote a generic solver that supports multiple dataflow analyses, and applied it to a reaching definitions
-analysis.
+- We then wrote a generic solver and dataflow framework that supports multiple analyses (both forward and backward), and applied it to reaching definitions, live variable, and constant propagation analyses.
 
 **Implementation details**
 
-[Describe CFG visualizations]
-- Then, we implemented a generic dataflow solver. The solver is generic over dataflow values, and takes in a description
-of the analysis containing the init, merge, and transfer functions. Class design was a little tricky, but the worklist
-algorithm itself was pretty much line-for-line equivalent to the pseudocode from lecture.
+- After constructing CFGs, we created some machinery that creates nodes from basic blocks and adds edges according to the control flow. The visualizer also accepts the output results from an analysis (i.e., the in/out data for each node)
+- Then, we implemented a generic dataflow solver (worklist algorithm). The solver is generic over dataflow values, and takes in a description of the analysis containing the init, merge, and transfer functions. Class design was a little tricky, but this allowed us the implementation of the worklist algorithm itself to be pretty much equivalent to the pseudocode from lecture.
 - We wrote a reaching definitions analysis. This was also rather straightforward due to the simple interface to the
-dataflow solver. We noticed that kill(node) is context-dependent; the instructions in kill(node) are the reaching defs
-which share a variable name with an instruction in defines(node).
+dataflow solver. We noticed that kill(node) is context-dependent; the instructions in kill(node) are the reaching defs which share a variable name with an instruction in defines(node).
+- Live variable analysis was also implemented - this required us to add a few lines to the worklist algorithm which allows it to handle both forward and backward analyses.
+- Finally, we implemented constant propagation. With the existing framework, this was reasonably straight-forward. While constant folding has yet to be implemented, this analysis should make this task simpler.
 
 **How did you test it? Which test inputs did you use? Do you have any quantitative results to report?**
 
-- Having visualizations for CFGs helped us verify that the graphs we generated were correct.
-- For testing the reaching definitions analysis, we used the tests in bril/examples/test/df, as well as tests that we
-wrote ourselves. We manually checked that the output was correct.
+- Though we weren't able to test it as rigorously as the previous lesson (since no new optimizations were performed), we found that the several hand-crafted examples and graph visualizations were helpful in determining the correctness of code.
+- The visualizations for CFGs helped us verify that the graphs we generated were correct, as well as the data flow along the edges.
+- For testing the reaching definitions analysis, we used the tests in bril/examples/test/df, as well as tests that we wrote ourselves. We manually checked that the output was correct.
 
 **What was the hardest part of the task? How did you solve this problem?**
+- The tricky part of constant propagation was how to distinguish between uninitialized variables and variables with conflicting definitions (e.g., takes two separate values on the incoming branches). We decided to define a lattice where uninitialized was at the top, known values in the middle, then "multi-defined" on the bottom. We assume that since uninitialized values isn't valid bril, it was ok the define the lattice as such.
+- We also found some of the transfer functions harder to write than it looked on paper. For live variable analysis, it ended up being easier defining the equations at the instruction level and iterating through the instructions than to define it at the basic block level.
 
-[TODO]
+Example CFG output after live variable and (cropped) constant propagation analysis on `ackerman.bril`:
+<p align="center">
+  <img src="https://github.com/sampsyo/cs6120/assets/8275672/3d240198-f395-48c9-823e-4eaba5afca3a" width=500 />
+</p>
+<p align="center">
+  <img src="https://github.com/sampsyo/cs6120/assets/8275672/c9b5fcde-a249-494c-a9fb-9e27492bb6b1" width=800 />
+</p>
+
+
+
+
