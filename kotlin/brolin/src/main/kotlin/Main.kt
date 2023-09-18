@@ -1,9 +1,6 @@
 import climbers.DCEClimber
 import climbers.LVNClimber
-import dataflow.ConstantPropAnalysis
-import dataflow.DominatorsAnalysis
-import dataflow.LiveVariablesAnalysis
-import dataflow.ReachingDefsAnalysis
+import dataflow.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromJsonElement
@@ -40,9 +37,19 @@ fun main(args: Array<String>) {
                 println(constantPropAnalysis)
             }
 
-            Actions.DOMINATOR -> {
-                val dominatorAnalysis = DominatorsAnalysis.analyze(cfgProgram)
-                println(dominatorAnalysis)
+            Actions.DOMINATOR_TREE -> {
+                val dominatorAnalysis = DominatorsAnalysis.getDominatorTrees(cfgProgram)
+                println(dominatorAnalysis.prettyPrintTrees())
+            }
+
+            Actions.DOMINATORS -> {
+                val dominatorAnalysis = DominatorsAnalysis.getDominators(cfgProgram)
+                println(dominatorAnalysis.prettyPrintMaps())
+            }
+
+            Actions.DOMINANCE_FRONTIER -> {
+                val dominatorAnalysis = DominatorsAnalysis.getDominanceFrontiers(cfgProgram)
+                println(dominatorAnalysis.prettyPrintFrontiers())
             }
 
             Actions.OUT -> {
@@ -67,7 +74,9 @@ fun handleArgs(args: Array<String>): List<Actions> {
             "--live" -> actions.add(Actions.LIVE)
             "--cp" -> actions.add(Actions.CONST_PROP)
             "--nout" -> actions.remove(Actions.OUT)
-            "--dom" -> actions.add(Actions.DOMINATOR)
+            "--dom" -> actions.add(Actions.DOMINATORS)
+            "--domtree" -> actions.add(Actions.DOMINATOR_TREE)
+            "--domfront" -> actions.add(Actions.DOMINANCE_FRONTIER)
             "--cfg" -> actions.add(Actions.CFG)
         }
     }
@@ -75,5 +84,5 @@ fun handleArgs(args: Array<String>): List<Actions> {
 }
 
 enum class Actions {
-    LVN, DCE, REACH, OUT, LIVE, CONST_PROP, DOMINATOR, CFG
+    LVN, DCE, REACH, OUT, LIVE, CONST_PROP, DOMINATORS, DOMINATOR_TREE, DOMINANCE_FRONTIER, CFG
 }

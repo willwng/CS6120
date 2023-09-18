@@ -15,10 +15,12 @@ object DominatorsAnalysis {
     private fun buildTree(cfg: CFG, dominators: DominatorMap): DominatorTree {
         // Convert each CFG node to a dominator tree node
         val dominatorNodesMap = cfg.nodes.associateWith { DominatorTreeNode(cfgNode = it) }
-        // Populate the dominates field
+        // Populate the dominates/dominated field
         cfg.nodes.forEach { node ->
-            val dominatorNode = dominatorNodesMap[node]!!
-            dominatorNode.dominated = dominators[node]!!.map { dominatorNodesMap[it]!! }.toSet()
+            val treeNode = dominatorNodesMap[node]!!
+            val treeDominators = dominators[node]!!.map { dominatorNodesMap[it]!! }
+            treeNode.dominated = treeDominators.toSet()
+            treeDominators.forEach { it.dominates.add(treeNode) }
         }
 
         return DominatorTree(
@@ -60,7 +62,7 @@ object DominatorsAnalysis {
     }
 
     /** Creates a dominator tree for the given CFG */
-    private fun analyze(cfg: CFG): DominatorTree {
+    private fun getDominatorTrees(cfg: CFG): DominatorTree {
         val (nodeToDominators, nodeToDominated) = getDominators(cfg = cfg)
         // Convert to strict dominators
         val nodeToStrictDominators = nodeToDominators.toStrict()
@@ -78,18 +80,34 @@ object DominatorsAnalysis {
         return buildTree(cfg = cfg, dominators = immediateDominators)
     }
 
-    /** Builds and returns a map for function CFGs to DominatorTrees */
-    fun analyze(program: CFGProgram): Map<String, DominatorTree> =
-        program.graphs.associate { cfg -> cfg.function.name to analyze(cfg = cfg) }
 
     /**
-     * Returns the dominator frontier for the given dominatorTreeNode
+     * Returns the dominator frontier for the given cfg node
      * A's dominance frontier contains B iff A does not strictly dominate B, but A does dominate some predecessor of B
      */
-    fun computeDominanceFrontier(dominatorTreeNode: DominatorTreeNode, dominatorTree: DominatorTree) {
-        TODO()
+    fun computeDominanceFrontier(cfgNode: CFGNode, cfg: CFG): Set<CFGNode> {
+        val dominanceFrontier = mutableSetOf<CFGNode>()
+        val (_, nodeToDominated) = getDominators(cfg = cfg)
+        val dominatedNodes = nodeToDominated[cfgNode]
+
+        dominatedNodes?.forEach {
+            dominanceFrontier.addAll(it.successors)
+        }
+
+        return dominanceFrontier
     }
 
+    /** Builds and returns a map for function CFGs to DominatorTrees */
+    fun getDominatorTrees(program: CFGProgram): Map<String, DominatorTree> =
+        program.graphs.associate { cfg -> cfg.function.name to getDominatorTrees(cfg = cfg) }
+
+    fun getDominators(program: CFGProgram): Map<String, DominatorMap> =
+        program.graphs.associate { cfg -> cfg.function.name to getDominators(cfg = cfg).second }
+
+    fun getDominanceFrontiers(program: CFGProgram): Map<String, Map<CFGNode, Set<CFGNode>>> =
+        program.graphs.associate { cfg ->
+            cfg.function.name to cfg.nodes.associateWith { computeDominanceFrontier(cfgNode = it, cfg = cfg) }
+        }
 }
 
 /** [DominatorTree] represents the dominator tree for a given CFG */
@@ -97,12 +115,62 @@ data class DominatorTree(
     val cfg: CFG,
     val entry: DominatorTreeNode,
     val nodes: Set<DominatorTreeNode>
-)
+) {
+    fun prettyPrint(sb: StringBuilder): StringBuilder {
+        nodes.forEach { node ->
+            sb.appendLine("$node -> ${node.dominates}")
+        }
+        return sb
+    }
+}
 
 /** [DominatorTreeNode] represents a node in the dominator tree */
 class DominatorTreeNode(
     val cfgNode: CFGNode,
 ) {
-    // The list of nodes that this node is immediately dominated by
+    // The list of nodes that this node is immediately dominates/is dominated by
     lateinit var dominated: Set<DominatorTreeNode>
+    var dominates = mutableSetOf<DominatorTreeNode>()
+
+    override fun toString(): String {
+        return cfgNode.name
+    }
+}
+
+
+fun Map<String, DominatorMap>.prettyPrintMaps(): String {
+    val sb = StringBuilder()
+    sb.appendLine("---Dominators---")
+    forEach { (func, map) ->
+        sb.appendLine("Function $func:")
+        map.forEach { (node, dominatedNodes) ->
+            sb.appendLine("${node.name}: ${dominatedNodes.map { it.name }}")
+        }
+        sb.appendLine()
+    }
+    return sb.toString()
+}
+
+fun Map<String, DominatorTree>.prettyPrintTrees(): String {
+    val sb = StringBuilder()
+    sb.appendLine("---Dominator tree---")
+    forEach { (func, tree) ->
+        sb.appendLine("Function $func:")
+        tree.prettyPrint(sb = sb)
+        sb.appendLine()
+    }
+    return sb.toString()
+}
+
+fun Map<String, Map<CFGNode, Set<CFGNode>>>.prettyPrintFrontiers(): String {
+    val sb = StringBuilder()
+    sb.appendLine("---Dominance Frontiers---")
+    forEach { (func, map) ->
+        sb.appendLine("Function $func:")
+        map.forEach { (node, dominatedNodes) ->
+            sb.appendLine("${node.name}: ${dominatedNodes.map { it.name }}")
+        }
+        sb.appendLine()
+    }
+    return sb.toString()
 }
