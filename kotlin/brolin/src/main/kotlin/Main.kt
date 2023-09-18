@@ -51,15 +51,16 @@ fun main(args: Array<String>) {
                 val dominatorAnalysis = DominatorsAnalysis.getDominanceFrontiers(cfgProgram)
                 println(dominatorAnalysis.prettyPrintFrontiers())
             }
-
-            Actions.OUT -> {
-                val prettyJsonPrinter = Json { prettyPrint = true }
-                println(prettyJsonPrinter.encodeToString(cookedProgram))
-            }
+            // Output is handled after optimizations
+            Actions.OUT -> {}
 
             Actions.CFG -> {
                 TODO()
             }
+        }
+        if (Actions.OUT in actions) {
+            val prettyJsonPrinter = Json { prettyPrint = true }
+            println(prettyJsonPrinter.encodeToString(cookedProgram))
         }
     }
 }
