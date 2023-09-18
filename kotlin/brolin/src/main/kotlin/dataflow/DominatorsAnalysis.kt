@@ -82,6 +82,14 @@ object DominatorsAnalysis {
     fun analyze(program: CFGProgram): Map<String, DominatorTree> =
         program.graphs.associate { cfg -> cfg.function.name to analyze(cfg = cfg) }
 
+    /**
+     * Returns the dominator frontier for the given dominatorTreeNode
+     * A's dominance frontier contains B iff A does not strictly dominate B, but A does dominate some predecessor of B
+     */
+    fun computeDominanceFrontier(dominatorTreeNode: DominatorTreeNode, dominatorTree: DominatorTree) {
+        TODO()
+    }
+
 }
 
 /** [DominatorTree] represents the dominator tree for a given CFG */

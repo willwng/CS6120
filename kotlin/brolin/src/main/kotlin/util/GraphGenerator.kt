@@ -2,6 +2,8 @@ package util
 
 import dataflow.DataflowAnalysis.DataflowResult
 import dataflow.DominatorTree
+import java.io.FileOutputStream
+import java.io.PrintWriter
 
 object GraphGenerator {
     private fun String.fixStringQuotes(): String {
@@ -74,7 +76,7 @@ object GraphGenerator {
         return dotWriter
     }
 
-    fun createDominatorTreeOutput(dominatorTree: DominatorTree) : DotWriter {
+    fun createDominatorTreeOutput(dominatorTree: DominatorTree): DotWriter {
         val dotWriter = DotWriter()
         dotWriter.startGraph(name = dominatorTree.cfg.function.name + "_dominator")
         val nodeMap = dominatorTree.nodes.map { it.cfgNode }.mapIndexed { i, node -> node to i }.toMap()
@@ -87,7 +89,7 @@ object GraphGenerator {
             )
         }
         dominatorTree.nodes.forEach { node ->
-            node.dominated.forEach {dom ->
+            node.dominated.forEach { dom ->
                 addEdge(
                     source = dom.cfgNode,
                     sink = node.cfgNode,
@@ -100,5 +102,13 @@ object GraphGenerator {
         dotWriter.finishGraph()
 
         return dotWriter
+    }
+
+    fun <T> writeDotOutput(cfgProgram: CFGProgram, dataflowAnalysis: Map<String, DataflowResult<T>>, fileExt: String) {
+        cfgProgram.graphs.forEach {
+            val out = PrintWriter(FileOutputStream("${it.function.name}-$fileExt.dot"))
+            createGraphOutput(it, dataflowAnalysis[it.function.name]).writeToFile(out)
+            out.close()
+        }
     }
 }
