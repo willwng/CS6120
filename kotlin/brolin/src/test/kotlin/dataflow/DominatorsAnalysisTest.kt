@@ -35,9 +35,6 @@ class DominatorsAnalysisTest {
                 // If paths is empty, then the node must be unreachable
                 if (paths.isNotEmpty()) {
                     val commonNodes = paths.reduce { acc, t -> acc.intersect(t).toMutableSet() }
-                    if(node !in commonNodes) {
-                        println("food cooked")
-                    }
                     assert(node in commonNodes)
                 }
             }
