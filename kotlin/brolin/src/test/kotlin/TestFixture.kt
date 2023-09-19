@@ -19,7 +19,7 @@ object TestFixture {
         return CFGProgram.of(cookedProgram)
     }
 
-    private fun getCFGPrograms(files: List<File>): List<CFGProgram> {
-        return files.toList().map(::getCFGProgram)
+    private fun getCFGPrograms(files: List<File>): Map<File, CFGProgram> {
+        return files.associateWith { getCFGProgram(it) }
     }
 }
