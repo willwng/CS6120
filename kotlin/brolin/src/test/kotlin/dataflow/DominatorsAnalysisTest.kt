@@ -12,12 +12,8 @@ class DominatorsAnalysisTest {
 
     /** Returns all paths from [currNode] to [targetNode] in the [cfg] */
     private fun getAllPaths(
-        cfg: CFG,
-        currNode: CFGNode,
-        targetNode: CFGNode,
-        currPath: MutableSet<CFGNode>
+        cfg: CFG, currNode: CFGNode, targetNode: CFGNode, currPath: MutableSet<CFGNode>
     ): List<MutableSet<CFGNode>> {
-
         currPath.add(currNode)
         if (currNode == targetNode) {
             return listOf(currPath)
@@ -37,8 +33,11 @@ class DominatorsAnalysisTest {
         dominatorMap.forEach { (node, dom) ->
             dom.forEach {
                 val paths = getAllPaths(cfg = cfg, currNode = cfg.entry, targetNode = it, currPath = mutableSetOf())
-                val commonNodes = paths.reduce { acc, t -> acc.intersect(t).toMutableSet() }
-                assert(node in commonNodes)
+                // If paths is empty, then the node must be unreachable
+                if (paths.isNotEmpty()) {
+                    val commonNodes = paths.reduce { acc, t -> acc.intersect(t).toMutableSet() }
+                    assert(node in commonNodes)
+                }
             }
         }
 
