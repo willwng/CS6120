@@ -35,6 +35,25 @@ data class CFG(
     val entry: CFGNode,
     val nodes: MutableList<CFGNode> = mutableListOf()
 ) {
+    fun pruneUnreachableNodes(): CFG {
+        val reachableNodes = mutableSetOf<CFGNode>()
+
+        val queue = ArrayDeque<CFGNode>()
+        queue.add(entry)
+        while (queue.isNotEmpty()) {
+            val currNode = queue.removeFirst()
+            queue.addAll(currNode.successors.filter { it !in reachableNodes })
+            reachableNodes.add(currNode)
+        }
+
+        val unreachableNodes = nodes.toSet().minus(reachableNodes)
+        nodes.forEach {
+            it.predecessors.removeAll(unreachableNodes)
+        }
+
+        return CFG(function = function, entry = entry, nodes = reachableNodes.toMutableList())
+    }
+
     companion object {
         fun of(function: CookedFunction, freshLabels: FreshLabelGearLoop): CFG {
             val labelToNode = mutableMapOf<String, CFGNode>()
@@ -56,6 +75,7 @@ data class CFG(
                     last is EffectOperation && last.op == Operator.JMP -> listOf(labelToNode[last.labels[0]]!!)
                     last is EffectOperation && last.op == Operator.BR ->
                         last.labels.map { label -> labelToNode[label]!! }
+
                     last is EffectOperation && last.op == Operator.RET -> listOf()
                     // Handle potential fall-through
                     else -> if (i + 1 != nodes.size) listOf(nodes[i + 1]) else listOf()
@@ -74,7 +94,7 @@ data class CFGProgram(val graphs: List<CFG>) {
     companion object {
         fun of(program: CookedProgram): CFGProgram {
             val freshLabels = FreshLabelGearLoop(program)
-            return CFGProgram(program.functions.map { CFG.of(it, freshLabels) })
+            return CFGProgram(program.functions.map { CFG.of(it, freshLabels).pruneUnreachableNodes() })
         }
     }
 }
