@@ -11,16 +11,16 @@ class DominatorsAnalysisTest {
 
     /** Returns all paths from [currNode] to [targetNode] in the [cfg] */
     private fun getAllPaths(
-        cfg: CFG, currNode: CFGNode, targetNode: CFGNode, currPath: MutableSet<CFGNode>
+        cfg: CFG, currNode: CFGNode, targetNode: CFGNode, prevPath: MutableSet<CFGNode>
     ): List<MutableSet<CFGNode>> {
-        currPath.add(currNode)
+        val currPath = prevPath.union(setOf(currNode)).toMutableSet()
         if (currNode == targetNode) {
             return listOf(currPath)
         }
         val paths = arrayListOf<MutableSet<CFGNode>>()
         currNode.successors.forEach { succ ->
             if (succ !in currPath) {
-                val succPaths = getAllPaths(cfg = cfg, currNode = succ, targetNode = targetNode, currPath = currPath)
+                val succPaths = getAllPaths(cfg = cfg, currNode = succ, targetNode = targetNode, prevPath = currPath)
                 paths.addAll(succPaths)
             }
         }
@@ -28,26 +28,27 @@ class DominatorsAnalysisTest {
     }
 
     /** For a given CFG and DominatorMap, check that all paths from entry to each node contains the dominators */
-    private fun checkCFGDominators(cfg: CFG, dominatorMap: DominatorMap) {
-        dominatorMap.forEach { (node, dom) ->
-            dom.forEach {
-                val paths = getAllPaths(cfg = cfg, currNode = cfg.entry, targetNode = it, currPath = mutableSetOf())
-                // If paths is empty, then the node must be unreachable
-                if (paths.isNotEmpty()) {
-                    val commonNodes = paths.reduce { acc, t -> acc.intersect(t).toMutableSet() }
-                    assert(node in commonNodes)
+    private fun checkCFGDominators(cfg: CFG, dominatedMap: DominatorMap) {
+        dominatedMap.forEach { (node, dom) ->
+            val paths = getAllPaths(cfg = cfg, currNode = cfg.entry, targetNode = node, prevPath = mutableSetOf())
+            // If paths is empty, then the node must be unreachable
+            if (paths.isNotEmpty()) {
+                val commonNodes = paths.reduce { acc, t -> acc.intersect(t).toMutableSet() }
+                if(dom != commonNodes) {
+                    println("HERE")
                 }
+                assert(dom == commonNodes)
             }
         }
 
     }
 
     private fun checkDominators(cfgProgram: CFGProgram) {
-        val dominators = DominatorsAnalysis.getDominators(program = cfgProgram)
+        val dominators = DominatorsAnalysis.getDominated(program = cfgProgram)
         cfgProgram.graphs.forEach { cfg ->
             println("\t Running dominator test for ${cfg.function.name}")
             assertNotNull(dominators[cfg.function.name])
-            checkCFGDominators(cfg = cfg, dominatorMap = dominators[cfg.function.name]!!)
+            checkCFGDominators(cfg = cfg, dominatedMap = dominators[cfg.function.name]!!)
         }
     }
 

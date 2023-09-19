@@ -1,0 +1,30 @@
+[Dominator Code]() and [Test Code]()
+
+**Summary**
+- We (Will and I) did our implementation in Kotlin (built on top of the code from previous lessons).
+- We implemented methods to find dominator relations, construct dominator trees, and compute dominance frontiers in CFGs.
+- We also implemented an improved CLI and a testing framework to quickly test that our dominator relations were correct
+
+**Implementation details**
+- The algorithm for computing dominators, although similar to, wasn't computed using our dataflow framework from last lesson.
+However, it was reasonably straightforward - we compute the "dominated" and "dominating" nodes for each node in the CFG.
+We wrote functions to convert these maps into strict dominators, and immediate dominators.
+- The immediate dominators information is then used to construct Dominator Trees (which we can also visualize using Graphviz)
+- To implement the testing framework, we did a naive algorithm: suppose node A dominates B. We performed a DFS to find
+every path from the entry to B. We then took the intersection among all paths and ensured that A was included.
+- One case we missed at first is that in which the entry node has predecessors. However, this was straightforward to
+fix.
+
+**How did you test it? Which test inputs did you use? Do you have any quantitative results to report?**
+- We wrote a checker which naively finds all paths from the entry to a given node and checks that the intersection of
+nodes on that path is equal to the dominators computed by our analysis.
+- Using the new testing framework, we could easily run all test files at once to compare behavior between the naive and
+actual implementations. We used all files in core in addition to a few handwritten tests.
+
+TODO we need to check completeness in addition to soundness
+
+**What was the hardest part of the task? How did you solve this problem?**
+- The hardest part was probably deciding when to represent maps as node -> {dom[node]} or node -> {n | node in dom[n]}.
+We decided to just implement both since this makes lookups easier
+- Testing was also tricky since the number of paths through the CFG was pretty large. We solved early bugs by creating
+hand-made tests that were mostly control-flow but small in code size

@@ -105,6 +105,9 @@ object DominatorsAnalysis {
     fun getDominators(program: CFGProgram): Map<String, DominatorMap> =
         program.graphs.associate { cfg -> cfg.function.name to getDominators(cfg = cfg).second }
 
+    fun getDominated(program: CFGProgram): Map<String, DominatorMap> =
+        program.graphs.associate { cfg -> cfg.function.name to getDominators(cfg = cfg).first }
+
     /** Returns a DominanceFrontier for each CFG. The DominanceFrontier maps a cfg node to the nodes in its frontier */
     fun getDominanceFrontiers(program: CFGProgram): Map<String, Map<CFGNode, Set<CFGNode>>> =
         program.graphs.associate { cfg ->
