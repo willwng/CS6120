@@ -54,9 +54,7 @@ fun main(args: Array<String>) {
             // Output is handled after optimizations
             Actions.OUT -> {}
 
-            Actions.CFG -> {
-                TODO()
-            }
+            Actions.CFG -> TODO()
         }
         if (Actions.OUT in actions) {
             val prettyJsonPrinter = Json { prettyPrint = true }
