@@ -1,0 +1,456 @@
+{
+  "functions": [
+    {
+      "args": [
+        {
+          "name": "vectorA",
+          "type": {
+            "ptr": "int"
+          }
+        },
+        {
+          "name": "vectorB",
+          "type": {
+            "ptr": "int"
+          }
+        },
+        {
+          "name": "size",
+          "type": "int"
+        }
+      ],
+      "instrs": [
+        {
+          "dest": "one",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "dest": "index",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "dest": "answer",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "label": "loop"
+        },
+        {
+          "args": [
+            "vectorA",
+            "index"
+          ],
+          "dest": "ptrA",
+          "op": "ptradd",
+          "type": {
+            "ptr": "int"
+          }
+        },
+        {
+          "args": [
+            "vectorB",
+            "index"
+          ],
+          "dest": "ptrB",
+          "op": "ptradd",
+          "type": {
+            "ptr": "int"
+          }
+        },
+        {
+          "args": [
+            "ptrA"
+          ],
+          "dest": "valA",
+          "op": "load",
+          "type": "int"
+        },
+        {
+          "args": [
+            "ptrB"
+          ],
+          "dest": "valB",
+          "op": "load",
+          "type": "int"
+        },
+        {
+          "args": [
+            "valA",
+            "valB"
+          ],
+          "dest": "tmp",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "answer",
+            "tmp"
+          ],
+          "dest": "answer",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "index",
+            "one"
+          ],
+          "dest": "index",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "index",
+            "size"
+          ],
+          "dest": "cond",
+          "op": "lt",
+          "type": "bool"
+        },
+        {
+          "args": [
+            "cond"
+          ],
+          "labels": [
+            "loop",
+            "done"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "done"
+        },
+        {
+          "args": [
+            "answer"
+          ],
+          "op": "ret"
+        }
+      ],
+      "name": "dot_product",
+      "type": "int"
+    },
+    {
+      "instrs": [
+        {
+          "dest": "a",
+          "op": "const",
+          "type": "int",
+          "value": 25
+        },
+        {
+          "dest": "b",
+          "op": "const",
+          "type": "int",
+          "value": 50
+        },
+        {
+          "dest": "c",
+          "op": "const",
+          "type": "int",
+          "value": 100
+        },
+        {
+          "dest": "d",
+          "op": "const",
+          "type": "int",
+          "value": 150
+        },
+        {
+          "dest": "e",
+          "op": "const",
+          "type": "int",
+          "value": 250
+        },
+        {
+          "dest": "f",
+          "op": "const",
+          "type": "int",
+          "value": 2
+        },
+        {
+          "dest": "g",
+          "op": "const",
+          "type": "int",
+          "value": 10
+        },
+        {
+          "dest": "h",
+          "op": "const",
+          "type": "int",
+          "value": 20
+        },
+        {
+          "dest": "i",
+          "op": "const",
+          "type": "int",
+          "value": 30
+        },
+        {
+          "dest": "j",
+          "op": "const",
+          "type": "int",
+          "value": 40
+        },
+        {
+          "dest": "one",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "dest": "zero",
+          "op": "const",
+          "type": "int",
+          "value": 0
+        },
+        {
+          "dest": "size",
+          "op": "const",
+          "type": "int",
+          "value": 5
+        },
+        {
+          "args": [
+            "size"
+          ],
+          "dest": "vectorA",
+          "op": "alloc",
+          "type": {
+            "ptr": "int"
+          }
+        },
+        {
+          "args": [
+            "vectorA",
+            "zero"
+          ],
+          "dest": "indexPtr",
+          "op": "ptradd",
+          "type": {
+            "ptr": "int"
+          }
+        },
+        {
+          "args": [
+            "indexPtr",
+            "a"
+          ],
+          "op": "store"
+        },
+        {
+          "args": [
+            "indexPtr",
+            "one"
+          ],
+          "dest": "indexPtr",
+          "op": "ptradd",
+          "type": {
+            "ptr": "int"
+          }
+        },
+        {
+          "args": [
+            "indexPtr",
+            "b"
+          ],
+          "op": "store"
+        },
+        {
+          "args": [
+            "indexPtr",
+            "one"
+          ],
+          "dest": "indexPtr",
+          "op": "ptradd",
+          "type": {
+            "ptr": "int"
+          }
+        },
+        {
+          "args": [
+            "indexPtr",
+            "c"
+          ],
+          "op": "store"
+        },
+        {
+          "args": [
+            "indexPtr",
+            "one"
+          ],
+          "dest": "indexPtr",
+          "op": "ptradd",
+          "type": {
+            "ptr": "int"
+          }
+        },
+        {
+          "args": [
+            "indexPtr",
+            "d"
+          ],
+          "op": "store"
+        },
+        {
+          "args": [
+            "indexPtr",
+            "one"
+          ],
+          "dest": "indexPtr",
+          "op": "ptradd",
+          "type": {
+            "ptr": "int"
+          }
+        },
+        {
+          "args": [
+            "indexPtr",
+            "e"
+          ],
+          "op": "store"
+        },
+        {
+          "args": [
+            "size"
+          ],
+          "dest": "vectorB",
+          "op": "alloc",
+          "type": {
+            "ptr": "int"
+          }
+        },
+        {
+          "args": [
+            "vectorB",
+            "zero"
+          ],
+          "dest": "indexPtr",
+          "op": "ptradd",
+          "type": {
+            "ptr": "int"
+          }
+        },
+        {
+          "args": [
+            "indexPtr",
+            "f"
+          ],
+          "op": "store"
+        },
+        {
+          "args": [
+            "indexPtr",
+            "one"
+          ],
+          "dest": "indexPtr",
+          "op": "ptradd",
+          "type": {
+            "ptr": "int"
+          }
+        },
+        {
+          "args": [
+            "indexPtr",
+            "g"
+          ],
+          "op": "store"
+        },
+        {
+          "args": [
+            "indexPtr",
+            "one"
+          ],
+          "dest": "indexPtr",
+          "op": "ptradd",
+          "type": {
+            "ptr": "int"
+          }
+        },
+        {
+          "args": [
+            "indexPtr",
+            "h"
+          ],
+          "op": "store"
+        },
+        {
+          "args": [
+            "indexPtr",
+            "one"
+          ],
+          "dest": "indexPtr",
+          "op": "ptradd",
+          "type": {
+            "ptr": "int"
+          }
+        },
+        {
+          "args": [
+            "indexPtr",
+            "i"
+          ],
+          "op": "store"
+        },
+        {
+          "args": [
+            "indexPtr",
+            "one"
+          ],
+          "dest": "indexPtr",
+          "op": "ptradd",
+          "type": {
+            "ptr": "int"
+          }
+        },
+        {
+          "args": [
+            "indexPtr",
+            "j"
+          ],
+          "op": "store"
+        },
+        {
+          "args": [
+            "vectorA",
+            "vectorB",
+            "size"
+          ],
+          "dest": "val",
+          "funcs": [
+            "dot_product"
+          ],
+          "op": "call",
+          "type": "int"
+        },
+        {
+          "args": [
+            "val"
+          ],
+          "op": "print"
+        },
+        {
+          "args": [
+            "vectorA"
+          ],
+          "op": "free"
+        },
+        {
+          "args": [
+            "vectorB"
+          ],
+          "op": "free"
+        }
+      ],
+      "name": "main"
+    }
+  ]
+}

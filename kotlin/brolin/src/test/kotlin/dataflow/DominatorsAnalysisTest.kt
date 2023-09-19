@@ -7,7 +7,6 @@ import util.CFGNode
 import util.CFGProgram
 import kotlin.test.assertNotNull
 
-
 class DominatorsAnalysisTest {
 
     /** Returns all paths from [currNode] to [targetNode] in the [cfg] */
@@ -36,6 +35,9 @@ class DominatorsAnalysisTest {
                 // If paths is empty, then the node must be unreachable
                 if (paths.isNotEmpty()) {
                     val commonNodes = paths.reduce { acc, t -> acc.intersect(t).toMutableSet() }
+                    if(node !in commonNodes) {
+                        println("food cooked")
+                    }
                     assert(node in commonNodes)
                 }
             }

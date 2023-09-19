@@ -41,7 +41,7 @@ object DominatorsAnalysis {
             cfg.nodes.forEach { node ->
                 val prevDominators = nodeToDominators[node]
                 // Determine the dominators of the node's predecessors
-                val predDominators = if (node.predecessors.isNotEmpty())
+                val predDominators = if (node.predecessors.isNotEmpty() && node != cfg.entry)
                     (node.predecessors.map { pred -> nodeToDominators[pred]!! }).reduce { acc, t -> acc.intersect(t) }
                 else emptySet()
 
