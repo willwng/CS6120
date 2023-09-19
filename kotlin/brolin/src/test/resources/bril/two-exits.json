@@ -1,0 +1,37 @@
+{
+  "functions": [
+    {
+      "args": [
+        {
+          "name": "cond",
+          "type": "bool"
+        }
+      ],
+      "instrs": [
+        {
+          "args": [
+            "cond"
+          ],
+          "labels": [
+            "a",
+            "b"
+          ],
+          "op": "br"
+        },
+        {
+          "label": "a"
+        },
+        {
+          "op": "ret"
+        },
+        {
+          "label": "b"
+        },
+        {
+          "op": "ret"
+        }
+      ],
+      "name": "main"
+    }
+  ]
+}
