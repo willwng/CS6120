@@ -21,10 +21,11 @@ nodes on that path is equal to the dominators computed by our analysis.
 - Using the new testing framework, we could easily run all test files at once to compare behavior between the naive and
 actual implementations. We used all files in core in addition to a few handwritten tests.
 
-TODO we need to check completeness in addition to soundness
-
 **What was the hardest part of the task? How did you solve this problem?**
 - The hardest part was probably deciding when to represent maps as node -> {dom[node]} or node -> {n | node in dom[n]}.
 We decided to just implement both since this makes lookups easier
 - Testing was also tricky since the number of paths through the CFG was pretty large. We solved early bugs by creating
 hand-made tests that were mostly control-flow but small in code size
+- One bug we ran into is when unreachable nodes are involved. If we compute dominators by intersecting those of the
+predecessors, but one of our predecessors is unreachable, we may falsely get an empty set. We had to first prune
+unreachable nodes before running the algorithm to find dominators.
