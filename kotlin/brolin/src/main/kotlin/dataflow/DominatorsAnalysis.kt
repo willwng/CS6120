@@ -34,7 +34,7 @@ object DominatorsAnalysis {
     private fun getDominators(cfg: CFG): Pair<DominatorMap, DominatorMap> {
         // Maintain a from a node to its dominators, and a map from a node to its dominated nodes
         val nodeToDominators = cfg.nodes.associateWith { _ -> cfg.nodes.toSet() }.toMutableMap()
-        val nodeToDominated = nodeToDominators.toMutableMap()
+        val nodeToDominated = cfg.nodes.associateWith { setOf<CFGNode>() }.toMutableMap()
         var changed = true
         while (changed) {
             changed = false
@@ -49,8 +49,11 @@ object DominatorsAnalysis {
                 if (prevDominators != newDominators) changed = true
 
                 nodeToDominators[node] = newDominators
-                newDominators.forEach { nodeToDominated[it] = nodeToDominated[it]!!.union(setOf(node)) }
             }
+        }
+        // Create the map from node -> {n | node dominates n}
+        nodeToDominators.forEach { (node, dominators) ->
+            dominators.forEach { nodeToDominated[it] = nodeToDominated[it]!!.union(setOf(node)) }
         }
         return Pair(nodeToDominators, nodeToDominated)
     }
