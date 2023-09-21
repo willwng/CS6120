@@ -28,7 +28,7 @@ class DominatorsAnalysisTest {
     }
 
     /** For a given CFG and DominatorMap, check that all paths from entry to each node contains the dominators */
-    private fun checkCFGDominators(cfg: CFG, dominatedMap: DominatorMap) {
+    private fun checkCFGDominated(cfg: CFG, dominatedMap: DominatorMap) {
         dominatedMap.forEach { (node, dom) ->
             val paths = getAllPaths(cfg = cfg, currNode = cfg.entry, targetNode = node, prevPath = mutableSetOf())
             // If paths is empty, then the node must be unreachable
@@ -37,15 +37,33 @@ class DominatorsAnalysisTest {
                 assert(dom == commonNodes)
             }
         }
-
     }
 
+    /** Checks that the two maps representing dominators are consistent */
+    private fun checkDominatorMapConsistency(dominatedMap: DominatorMap, dominatorMap: DominatorMap) {
+        dominatedMap.forEach { (node, dominated) ->
+            dominated.forEach {
+                assert(node in dominatorMap[it]!!)
+            }
+        }
+    }
+
+
     private fun checkDominators(cfgProgram: CFGProgram) {
-        val dominators = DominatorsAnalysis.getDominated(program = cfgProgram)
+        val nodeToDominated = DominatorsAnalysis.getDominated(program = cfgProgram)
+        val nodeToDominators = DominatorsAnalysis.getDominators(program = cfgProgram)
         cfgProgram.graphs.forEach { cfg ->
-            println("\t Running dominator test for ${cfg.function.name}")
-            assertNotNull(dominators[cfg.function.name])
-            checkCFGDominators(cfg = cfg, dominatedMap = dominators[cfg.function.name]!!)
+            val funcName = cfg.function.name
+            println("\t Running dominator test for $funcName")
+            assertNotNull(nodeToDominated[funcName])
+            assertNotNull(nodeToDominators[funcName])
+            println("\t\t Checking paths agree")
+            checkCFGDominated(cfg = cfg, dominatedMap = nodeToDominated[funcName]!!)
+            println("\t\t Checking map consistency")
+            checkDominatorMapConsistency(
+                dominatedMap = nodeToDominated[funcName]!!,
+                dominatorMap = nodeToDominators[funcName]!!
+            )
         }
     }
 
