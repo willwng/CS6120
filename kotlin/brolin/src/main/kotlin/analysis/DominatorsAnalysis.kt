@@ -89,14 +89,14 @@ object DominatorsAnalysis {
      * Returns the dominator frontier for the given cfg node
      * A's dominance frontier contains B iff A does not strictly dominate B, but A does dominate some predecessor of B
      */
-    fun computeDominanceFrontier(cfgNode: CFGNode, cfg: CFG): Set<CFGNode> {
+    private fun computeDominanceFrontier(cfgNode: CFGNode, cfg: CFG): Set<CFGNode> {
         val dominanceFrontier = mutableSetOf<CFGNode>()
-        val (_, nodeToDominated) = getDominators(cfg = cfg)
-        val dominatedNodes = nodeToDominated[cfgNode]
+        val nodeToDominated = getDominators(cfg = cfg).second
+        val dominatedNodes = nodeToDominated[cfgNode]!!
 
-        dominatedNodes?.forEach {
-            dominanceFrontier.addAll(it.successors)
-        }
+        // Add the successors, but not anything that is dominated
+        dominatedNodes.forEach { dom -> dominanceFrontier.addAll(dom.successors) }
+        dominanceFrontier.removeAll(dominatedNodes)
 
         return dominanceFrontier
     }
@@ -107,10 +107,10 @@ object DominatorsAnalysis {
 
     /** Returns a DominatorMap for each CFG. The DominatorMap maps a cfg node to the nodes it dominates */
     fun getDominators(program: CFGProgram): Map<String, DominatorMap> =
-        program.graphs.associate { cfg -> cfg.function.name to getDominators(cfg = cfg).second }
+        program.graphs.associate { cfg -> cfg.function.name to getDominators(cfg = cfg).first }
 
     fun getDominated(program: CFGProgram): Map<String, DominatorMap> =
-        program.graphs.associate { cfg -> cfg.function.name to getDominators(cfg = cfg).first }
+        program.graphs.associate { cfg -> cfg.function.name to getDominators(cfg = cfg).second }
 
     /** Returns a DominanceFrontier for each CFG. The DominanceFrontier maps a cfg node to the nodes in its frontier */
     fun getDominanceFrontiers(program: CFGProgram): Map<String, Map<CFGNode, Set<CFGNode>>> =
