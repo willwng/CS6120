@@ -7,6 +7,9 @@ import kotlinx.serialization.json.decodeFromJsonElement
 import trees.RawProgram
 import trees.TreeCooker
 import util.CFGProgram
+import util.GraphGenerator
+import java.io.FileOutputStream
+import java.io.PrintWriter
 
 fun main(args: Array<String>) {
     val actions = handleArgs(args = args)
@@ -40,6 +43,11 @@ fun main(args: Array<String>) {
             Actions.DOMINATOR_TREE -> {
                 val dominatorAnalysis = DominatorsAnalysis.getDominatorTrees(cfgProgram)
                 println(dominatorAnalysis.prettyPrintTrees())
+                dominatorAnalysis.forEach { (func, tree) ->
+                    val out = PrintWriter(FileOutputStream("$func.dot"))
+                    GraphGenerator.createDominatorTreeOutput(tree).writeToFile(out)
+                    out.close()
+                }
             }
 
             Actions.DOMINATORS -> {
@@ -54,11 +62,18 @@ fun main(args: Array<String>) {
             // Output is handled after optimizations
             Actions.OUT -> {}
 
-            Actions.CFG -> TODO()
+            Actions.CFG -> {
+                cfgProgram.graphs.forEach { cfg ->
+                    val out = PrintWriter(FileOutputStream("${cfg.function.name}-cfg.dot"))
+                    GraphGenerator.createGraphOutput<LiveVariablesAnalysis>(cfg = cfg, null).writeToFile(out)
+                    out.close()
+                }
+            }
         }
         if (Actions.OUT in actions) {
+            val testProgram = cfgProgram.toCookedProgram()
             val prettyJsonPrinter = Json { prettyPrint = true }
-            println(prettyJsonPrinter.encodeToString(cookedProgram))
+            println(prettyJsonPrinter.encodeToString(testProgram))
         }
     }
 }

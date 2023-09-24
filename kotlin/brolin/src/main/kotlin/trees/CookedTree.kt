@@ -71,6 +71,16 @@ class EffectOperation(
     override fun toString(): String {
         return "$op: $funcs $args $labels"
     }
+
+    companion object {
+        fun jump(label: String): EffectOperation {
+            return EffectOperation(op = Operator.JMP, args = listOf(), funcs = listOf(), labels = listOf(label))
+        }
+
+        fun ret(): EffectOperation {
+            return EffectOperation(op = Operator.RET, args = listOf(), funcs = listOf())
+        }
+    }
 }
 
 /** A Value Operation is an instruction that takes arguments, does some computation, and produces a value */
@@ -102,6 +112,11 @@ enum class Operator(val commutative: Boolean = false) {
 
     override fun toString(): String {
         return super.toString().lowercase()
+    }
+
+    companion object {
+        // Operations that have more complicated control-flow (signifies end of block)
+        val TERMINATORS = listOf(JMP, RET, BR)
     }
 }
 

@@ -35,6 +35,7 @@ data class CFG(
     val entry: CFGNode,
     val nodes: MutableList<CFGNode> = mutableListOf()
 ) {
+    /** A simple optimization that simple removes any CFG nodes that are not reachable from entry */
     fun pruneUnreachableNodes(): CFG {
         val reachableNodes = mutableSetOf<CFGNode>()
 
@@ -45,7 +46,6 @@ data class CFG(
             queue.addAll(currNode.successors.filter { it !in reachableNodes })
             reachableNodes.add(currNode)
         }
-
         val unreachableNodes = nodes.toSet().minus(reachableNodes)
         nodes.forEach {
             it.predecessors.removeAll(unreachableNodes)
@@ -54,16 +54,47 @@ data class CFG(
         return CFG(function = function, entry = entry, nodes = reachableNodes.toMutableList())
     }
 
+    /** Converts a CFG back into a function */
+    fun toCookedFunction(): CookedFunction {
+        val instructions = mutableListOf<CookedInstructionOrLabel>()
+        nodes.forEach { node ->
+            val blockInstructions = node.block.instructions
+            // If we generated a fresh name for this node, we need to give it a label
+            if (blockInstructions.first() !is CookedLabel) {
+                instructions.add(CookedLabel(node.name))
+            }
+            instructions.addAll(blockInstructions)
+            // Add jumps for non-terminators to retain control flow
+            val lastInstruction = blockInstructions.last()
+            if (lastInstruction !is CookedInstruction || lastInstruction.op !in Operator.TERMINATORS) {
+                assert(node.successors.size <= 1) // ret is optional -> possible to have no successors
+                if (node.successors.size == 1) {
+                    instructions.add(EffectOperation.jump(node.successors.first().name))
+                } else {
+                    instructions.add(EffectOperation.ret())
+                }
+            }
+        }
+
+        return CookedFunction(
+            name = function.name,
+            args = function.args,
+            type = function.type,
+            instructions = instructions
+        )
+    }
+
     companion object {
+        /** Constructs a CFG from a function */
         fun of(function: CookedFunction, freshLabels: FreshLabelGearLoop): CFG {
             val labelToNode = mutableMapOf<String, CFGNode>()
             val nodes = mutableListOf<CFGNode>()
             val fnName = function.name
 
-            // Initialize nodes
+            // Initialize nodes. If the block already starts with a label, use it
             BlockSetter().block(function).forEach { block ->
                 val first = block.instructions.first()
-                val name = freshLabels.get("${fnName}${if (first is CookedLabel) "_" + first.label else ""}")
+                val name = if (first is CookedLabel) first.label else freshLabels.get(fnName)
                 val node = CFGNode(name, block, mutableListOf(), mutableListOf())
                 if (first is CookedLabel) labelToNode[first.label] = node
                 nodes.add(node)
@@ -96,5 +127,9 @@ data class CFGProgram(val graphs: List<CFG>) {
             val freshLabels = FreshLabelGearLoop(program)
             return CFGProgram(program.functions.map { CFG.of(it, freshLabels).pruneUnreachableNodes() })
         }
+    }
+
+    fun toCookedProgram(): CookedProgram {
+        return CookedProgram(functions = graphs.map { it.toCookedFunction() })
     }
 }

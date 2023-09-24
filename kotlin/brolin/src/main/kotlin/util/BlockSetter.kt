@@ -25,9 +25,6 @@ data class BlockedFunction(
 
 /** Setters create the routes upon which climbers operate. */
 class BlockSetter {
-    // Operations that have more complicated control-flow (signifies end of block)
-    private val terminators = listOf(Operator.JMP, Operator.RET, Operator.BR)
-
     /** Takes a function [f] at the granularity of basic blocks and returns the result of applying it to the program */
     fun applyToProgramBlocks(program: CookedProgram, f: (block: BasicBlock) -> BasicBlock): CookedProgram =
         BlockedProgram(
@@ -53,7 +50,7 @@ class BlockSetter {
                 is CookedInstruction -> {
                     currentBlock.add(instr)
 
-                    if (instr.op in terminators) {
+                    if (instr.op in Operator.TERMINATORS) {
                         blocks.add(BasicBlock(currentBlock))
                         currentBlock = arrayListOf()
                     }
@@ -73,6 +70,6 @@ class BlockSetter {
         if (currentBlock.isNotEmpty()) {
             blocks.add(BasicBlock(currentBlock))
         }
-        return blocks.filter{ it.instructions.isNotEmpty() }
+        return blocks.filter { it.instructions.isNotEmpty() }
     }
 }
