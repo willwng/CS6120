@@ -113,7 +113,7 @@ object DominatorsAnalysis {
         program.graphs.associate { cfg -> cfg.function.name to getDominators(cfg = cfg).second }
 
     /** Returns a DominanceFrontier for each CFG. The DominanceFrontier maps a cfg node to the nodes in its frontier */
-    fun getDominanceFrontiers(program: CFGProgram): Map<String, Map<CFGNode, Set<CFGNode>>> =
+    fun getDominanceFrontiers(program: CFGProgram): Map<String, DominatorMap> =
         program.graphs.associate { cfg ->
             cfg.function.name to cfg.nodes.associateWith { computeDominanceFrontier(cfgNode = it, cfg = cfg) }
         }
@@ -138,8 +138,8 @@ class DominatorTreeNode(
     val cfgNode: CFGNode,
 ) {
     // The list of nodes that this node is immediately dominates/is dominated by
-    lateinit var dominated: Set<DominatorTreeNode>
     var dominates = mutableSetOf<DominatorTreeNode>()
+    lateinit var dominated: Set<DominatorTreeNode>
 
     override fun toString(): String {
         return cfgNode.name
