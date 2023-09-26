@@ -1,4 +1,4 @@
-package dataflow
+package analysis
 
 import util.CFG
 import util.CFGNode

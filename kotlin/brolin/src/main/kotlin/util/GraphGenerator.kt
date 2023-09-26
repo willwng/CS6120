@@ -1,7 +1,7 @@
 package util
 
-import dataflow.DataflowAnalysis.DataflowResult
-import dataflow.DominatorTree
+import analysis.dataflow.DataflowAnalysis.DataflowResult
+import analysis.DominatorTree
 import java.io.FileOutputStream
 import java.io.PrintWriter
 

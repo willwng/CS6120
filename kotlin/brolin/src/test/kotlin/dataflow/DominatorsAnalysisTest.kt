@@ -1,6 +1,8 @@
 package dataflow
 
 import TestFixture
+import analysis.DominatorMap
+import analysis.DominatorsAnalysis
 import org.junit.jupiter.api.Test
 import util.CFG
 import util.CFGNode

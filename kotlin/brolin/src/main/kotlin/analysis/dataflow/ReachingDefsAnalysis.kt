@@ -1,7 +1,7 @@
-package dataflow
+package analysis.dataflow
 
-import dataflow.DataflowAnalysis.DataflowResult
-import dataflow.ReachingDefsAnalysis.ReachingDefsBeta.ReachingDefs
+import analysis.dataflow.ReachingDefsAnalysis.ReachingDefsBeta.ReachingDefs
+import analysis.dataflow.DataflowAnalysis.DataflowResult
 import trees.WriteInstruction
 import util.CFGNode
 import util.CFGProgram

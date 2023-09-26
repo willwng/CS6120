@@ -1,9 +1,10 @@
-package dataflow
+package analysis.dataflow
 
+import analysis.dataflow.LiveVariablesAnalysis.LiveVariablesBeta.LiveVars
 import trees.ReadInstruction
 import trees.WriteInstruction
-import dataflow.LiveVariablesAnalysis.LiveVariablesBeta.LiveVars
-import util.*
+import util.CFGNode
+import util.CFGProgram
 
 object LiveVariablesAnalysis {
     class LiveVariablesBeta : DataflowBeta<LiveVars> {

@@ -1,7 +1,7 @@
 package climbers
 
-import dataflow.DominatorMap
-import dataflow.DominatorsAnalysis
+import analysis.DominatorMap
+import analysis.DominatorsAnalysis
 import trees.CookedProgram
 import util.CFG
 import util.CFGNode

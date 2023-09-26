@@ -1,6 +1,12 @@
+import analysis.DominatorsAnalysis
+import analysis.dataflow.ConstantPropAnalysis
+import analysis.dataflow.LiveVariablesAnalysis
+import analysis.dataflow.ReachingDefsAnalysis
+import analysis.prettyPrintFrontiers
+import analysis.prettyPrintMaps
+import analysis.prettyPrintTrees
 import climbers.DCEClimber
 import climbers.LVNClimber
-import dataflow.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromJsonElement

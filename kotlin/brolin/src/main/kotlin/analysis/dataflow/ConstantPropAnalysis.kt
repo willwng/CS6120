@@ -1,9 +1,9 @@
-package dataflow
+package analysis.dataflow
 
-import dataflow.ConstantPropAnalysis.ConstantPropBeta.Constant.Known
-import dataflow.ConstantPropAnalysis.ConstantPropBeta.Constant.MultiDefined
-import dataflow.ConstantPropAnalysis.ConstantPropBeta.KnownConstants
-import dataflow.DataflowAnalysis.DataflowResult
+import analysis.dataflow.ConstantPropAnalysis.ConstantPropBeta.Constant.Known
+import analysis.dataflow.ConstantPropAnalysis.ConstantPropBeta.Constant.MultiDefined
+import analysis.dataflow.ConstantPropAnalysis.ConstantPropBeta.KnownConstants
+import analysis.dataflow.DataflowAnalysis.DataflowResult
 import trees.ConstantInstruction
 import trees.Value
 import trees.WriteInstruction
