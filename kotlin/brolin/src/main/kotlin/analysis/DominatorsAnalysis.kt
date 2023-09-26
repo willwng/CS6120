@@ -5,6 +5,7 @@ import util.CFGNode
 import util.CFGProgram
 
 typealias DominatorMap = Map<CFGNode, Set<CFGNode>>
+typealias TreeTranslator = Map<CFGNode, DominatorTreeNode>
 
 object DominatorsAnalysis {
 
@@ -12,7 +13,7 @@ object DominatorsAnalysis {
      * Builds a DominatorTree from the given dominators.
      * Requires dominators to be a map from nodes to its immediate dominators
      */
-    private fun buildTree(cfg: CFG, dominators: DominatorMap): DominatorTree {
+    private fun buildTree(cfg: CFG, dominators: DominatorMap): Pair<DominatorTree, TreeTranslator> {
         // Convert each CFG node to a dominator tree node
         val dominatorNodesMap = cfg.nodes.associateWith { DominatorTreeNode(cfgNode = it) }
         // Populate the dominates/dominated field
@@ -23,10 +24,12 @@ object DominatorsAnalysis {
             treeDominators.forEach { it.dominates.add(treeNode) }
         }
 
-        return DominatorTree(
-            cfg = cfg,
-            entry = dominatorNodesMap[cfg.entry]!!,
-            nodes = dominatorNodesMap.values.toSet()
+        return Pair(
+            DominatorTree(
+                cfg = cfg,
+                entry = dominatorNodesMap[cfg.entry]!!,
+                nodes = dominatorNodesMap.values.toSet()
+            ), dominatorNodesMap
         )
     }
 
@@ -66,7 +69,7 @@ object DominatorsAnalysis {
     }
 
     /** Creates a dominator tree for the given CFG */
-    private fun getDominatorTrees(cfg: CFG): DominatorTree {
+    private fun getDominatorTrees(cfg: CFG): Pair<DominatorTree, TreeTranslator> {
         val (nodeToDominators, nodeToDominated) = getDominators(cfg = cfg)
         // Convert to strict dominators
         val nodeToStrictDominators = nodeToDominators.toStrict()
@@ -102,7 +105,7 @@ object DominatorsAnalysis {
     }
 
     /** Builds and returns a map for function CFGs to DominatorTrees */
-    fun getDominatorTrees(program: CFGProgram): Map<String, DominatorTree> =
+    fun getDominatorTrees(program: CFGProgram): Map<String, Pair<DominatorTree, TreeTranslator>> =
         program.graphs.associate { cfg -> cfg.function.name to getDominatorTrees(cfg = cfg) }
 
     /** Returns a DominatorMap for each CFG. The DominatorMap maps a cfg node to the nodes it dominates */
