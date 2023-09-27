@@ -99,7 +99,7 @@ object SSAClimber : Climber {
                                 (d.cfgNode.block.instructions.first { insn -> insn is WriteInstruction && insn.dest == v } as WriteInstruction).type
                             block.phiNodes.add(
                                 PhiNode(
-                                    varName = v,
+                                    originalVarName = v,
                                     type = type,
                                     labelToLastName = mutableMapOf(d.name to v)
                                 )
