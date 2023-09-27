@@ -40,11 +40,23 @@ sealed interface CookedInstruction : CookedInstructionOrLabel {
 sealed interface WriteInstruction : CookedInstruction {
     val dest: String
     val type: Type
+
+    fun withDest(dest: String): WriteInstruction =
+        when (this) {
+            is ConstantInstruction -> ConstantInstruction(this.op, dest, this.type, this.value)
+            is ValueOperation -> ValueOperation(this.op, dest, this.type, this.args, this.funcs, this.labels)
+        }
 }
 
 /** Instructions that use a variable */
 sealed interface ReadInstruction : CookedInstruction {
     val args: List<String>
+
+    fun withArgs(args: List<String>): ReadInstruction =
+        when (this) {
+            is EffectOperation -> EffectOperation(this.op, args, this.funcs, this.labels)
+            is ValueOperation -> ValueOperation(this.op, this.dest, this.type, args, this.funcs, this.labels)
+        }
 }
 
 @Serializable(with = ConstantInstructionSerializer::class)
@@ -94,8 +106,6 @@ class ValueOperation(
     val labels: List<String> = listOf()
 ) : CookedInstruction, ReadInstruction, WriteInstruction {
     override fun toString() = "$dest: $type = $op $funcs $args $labels"
-
-    fun withArgs(newArgs: List<String>) = ValueOperation(op, dest, type, newArgs, funcs, labels)
 }
 
 @Serializable(with = OperatorSerializer::class)

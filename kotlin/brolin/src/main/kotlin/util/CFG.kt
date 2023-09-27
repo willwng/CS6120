@@ -4,7 +4,7 @@ import trees.*
 
 open class CFGNode(
     val name: String,
-    val block: BasicBlock,
+    var block: BasicBlock,
     val predecessors: MutableList<CFGNode>,
     val successors: MutableList<CFGNode>
 ) {

@@ -1,91 +1,195 @@
 package climbers
 
-import analysis.DominatorMap
-import analysis.DominatorTree
-import analysis.DominatorsAnalysis
-import analysis.TreeTranslator
-import trees.CookedProgram
-import trees.ReadInstruction
-import trees.WriteInstruction
-import util.CFG
-import util.CFGNode
-import util.CFGProgram
+import analysis.*
+import trees.*
+import util.*
 
+typealias PhiBlockTranslator = Map<CFGNode, PhiBlock>
+typealias StackVarMap = Map<String, ArrayDeque<String>>
+
+private fun PhiBlockTranslator.translate(cfgNode: CFGNode): PhiBlock {
+    return get(cfgNode)!!
+}
+
+/** A wrapper for CFGNodes: represents the node and any phi instructions added to it*/
+data class PhiBlock(
+    val cfgNode: CFGNode,
+    val phiNodes: MutableList<PhiNode>,
+    val name: String = cfgNode.name
+) {
+    fun has(name: String): Boolean =
+        phiNodes.any { it.varName == name }
+
+    fun phiOf(name: String): PhiNode? {
+        return phiNodes.firstOrNull { it.varName == name }
+    }
+
+    companion object {
+        fun of(cfgNode: CFGNode): PhiBlock {
+            return PhiBlock(cfgNode = cfgNode, phiNodes = mutableListOf())
+        }
+    }
+}
+
+data class PhiNode(
+    var varName: String,
+    /** CFGNode.name to variable name. Originally the source name, then new fresh ones */
+    val labelToLastName: MutableMap<String, String>
+) {
+    fun toInstruction(): CookedInstruction {
+        return ValueOperation(
+            op = Operator.PHI,
+            dest = varName,
+            type = Type(type = "TODO", baseType = null),
+            args = labelToLastName.values.toList(),
+            labels = labelToLastName.keys.toList()
+        )
+    }
+}
 
 object SSAClimber : Climber {
+    init {
+    }
 
     override fun applyToProgram(program: CookedProgram): CookedProgram {
         val cfgProgram = CFGProgram.of(program)
         val dominanceFrontiers = DominatorsAnalysis.getDominanceFrontiers(cfgProgram)
         val dominatorTrees = DominatorsAnalysis.getDominatorTrees(cfgProgram)
+        val freshNameGearLoop = FreshNameGearLoop(program)
         cfgProgram.graphs.forEach { cfg ->
             val name = cfg.function.name
             convertToSSA(
                 cfg = cfg,
                 dominanceFrontier = dominanceFrontiers[name]!!,
                 dominatorTree = dominatorTrees[name]!!.first,
-                treeTranslator = dominatorTrees[name]!!.second
+                treeTranslator = dominatorTrees[name]!!.second,
+                freshNames = freshNameGearLoop
             )
         }
         return cfgProgram.toCookedProgram()
     }
 
-    private fun insertPhiNodes(cfg: CFG, dominanceFrontier: DominatorMap, vars: Set<String>) {
-        val assignedBlocks = mutableSetOf<CFGNode>()
+    private fun insertPhiNodes(cfg: CFG, dominanceFrontier: DominatorMap, vars: Set<String>): PhiBlockTranslator {
+        // Wrap each cfg node into a PhiBlock
+        val phiBlockTranslator = cfg.nodes.associateWith { PhiBlock.of(it) }
+
+        // Get the PhiBlocks where each variable is possibly defined
         val varsToDef = vars.associateWith { v ->
-            cfg.nodes.filter { node -> v in node.definedNames }.toMutableSet()
+            phiBlockTranslator.values.filter { node -> v in node.cfgNode.definedNames }.toSet().toMutableList()
         }.toMutableMap()
 
         varsToDef.forEach { (v, defV) ->
             // Blocks where [v] is assigned
-            defV.forEach { d ->
+            for (i in 0 until defV.size) {
+                val d = defV[i]
                 // Dominance frontier of [d], add phi node if we haven't already
-                dominanceFrontier[d]?.filter { it !in assignedBlocks }?.forEach { block ->
-                    varsToDef[v]!!.add(block)
-                    TODO("Add Φ node")
-                }
+                dominanceFrontier[d.cfgNode]?.mapNotNull { phiBlockTranslator[it] }
+                    ?.forEach { block ->
+                        if (block.has(v)) {
+                            block.phiOf(v)?.labelToLastName?.set(d.name, v)
+                        } else {
+                            block.phiNodes.add(PhiNode(varName = v, labelToLastName = mutableMapOf(d.name to v)))
+                            defV.add(block)
+                        }
+                    }
             }
         }
+
+        return phiBlockTranslator
     }
 
-    private fun rename(node: CFGNode, dominatorTree: DominatorTree, treeTranslator: TreeTranslator) {
-        node.block.instructions.forEach { instr ->
+    private fun rename(
+        vars: Set<String>,
+        phiBlock: PhiBlock,
+        dominatorTree: DominatorTree,
+        treeTranslator: TreeTranslator,
+        phiBlockTranslator: PhiBlockTranslator,
+        freshNames: FreshNameGearLoop,
+        stack: StackVarMap,
+    ) {
+        val pushedVars = vars.associateWith { 0 }.toMutableMap()
+
+        // It is important that we rename phi nodes first. We always assume our RHS was updated by a predecessor
+        // But here we make a fresh name for the LHS
+        phiBlock.phiNodes.forEach { phiNode ->
+            val oldName = phiNode.varName
+            val newName = freshNames.get(oldName)
+            phiNode.varName = newName
+            stack[oldName]!!.addLast(newName)
+            pushedVars[oldName] = pushedVars[oldName]!! + 1
+        }
+
+        val renamedInstructions = phiBlock.cfgNode.block.instructions.map {
+            var instr = it
             // replace each argument to instr with stack[old name]
             if (instr is ReadInstruction) {
-                instr.args.map { }
+                instr = instr.withArgs(instr.args.map { arg -> stack[arg]?.last() ?: arg })
             }
             // replace the destination with a new name
             // push that new name onto stack[old name]
             if (instr is WriteInstruction) {
                 val oldName = instr.dest
-                TODO()
+                val newName = freshNames.get(oldName)
+                instr = instr.withDest(newName)
+                stack[oldName]!!.addLast(newName)
+                pushedVars[oldName] = pushedVars[oldName]!! + 1
+            }
+            instr
+        }
+
+        phiBlock.cfgNode.block = BasicBlock(instructions = renamedInstructions)
+
+        // Update successors to read from the latest new value
+        phiBlock.cfgNode.successors.forEach { s ->
+            phiBlockTranslator[s]!!.phiNodes.forEach {
+                it.labelToLastName[phiBlock.name] = stack[it.varName]!!.last()
             }
         }
 
-        node.successors.forEach { s ->
-            // for p in s's ϕ-nodes:
-            //  Assuming p is for a variable v, make it read from stack[v].
-            TODO()
+        // Rename blocks immediately dominated by this node
+        treeTranslator[phiBlock.cfgNode]!!.dominates.forEach {
+            rename(
+                vars = vars,
+                phiBlock = phiBlockTranslator.translate(it.cfgNode),
+                dominatorTree = dominatorTree,
+                treeTranslator = treeTranslator,
+                phiBlockTranslator = phiBlockTranslator,
+                freshNames = freshNames,
+                stack = stack
+            )
         }
 
-        treeTranslator[node]!!.dominates.forEach {
-            rename(node = it.cfgNode, dominatorTree = dominatorTree, treeTranslator = treeTranslator)
-        }
+        // Pop all the names we just pushed onto the stacks
+        pushedVars.forEach { (varName, numPushes) -> for (i in 1..numPushes) stack[varName]!!.removeLast() }
+
     }
 
     private fun convertToSSA(
         cfg: CFG,
         dominanceFrontier: DominatorMap,
         dominatorTree: DominatorTree,
-        treeTranslator: TreeTranslator
+        treeTranslator: TreeTranslator,
+        freshNames: FreshNameGearLoop,
     ) {
         // Gather all the variable definitions and the blocks which define them
         val vars = cfg.nodes.map { node -> node.definedNames }.fold(emptySet<String>()) { acc, defs -> acc.union(defs) }
-        insertPhiNodes(cfg = cfg, dominanceFrontier = dominanceFrontier, vars = vars)
+        val phiBlockTranslator = insertPhiNodes(cfg = cfg, dominanceFrontier = dominanceFrontier, vars = vars)
 
         // stack[v] is a stack of variable names (for every variable v)
-        val stack = mapOf<String, ArrayDeque<String>>().withDefault { ArrayDeque() }
-        rename(node = cfg.entry, dominatorTree = dominatorTree, treeTranslator = treeTranslator)
+        val stack = vars.associateWith { ArrayDeque<String>() }
+        rename(
+            vars = vars,
+            phiBlock = phiBlockTranslator.translate(cfg.entry),
+            dominatorTree = dominatorTree,
+            treeTranslator = treeTranslator,
+            phiBlockTranslator = phiBlockTranslator,
+            freshNames = freshNames,
+            stack = stack,
+        )
+        phiBlockTranslator.values.forEach {
+            println(it.cfgNode.block)
+            println(it.phiNodes)
+        }
     }
 
 }

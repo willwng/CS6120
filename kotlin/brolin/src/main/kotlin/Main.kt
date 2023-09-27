@@ -7,6 +7,7 @@ import analysis.prettyPrintMaps
 import analysis.prettyPrintTrees
 import climbers.DCEClimber
 import climbers.LVNClimber
+import climbers.SSAClimber
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromJsonElement
@@ -51,7 +52,7 @@ fun main(args: Array<String>) {
                 println(dominatorAnalysis.prettyPrintTrees())
                 dominatorAnalysis.forEach { (func, tree) ->
                     val out = PrintWriter(FileOutputStream("$func.dot"))
-                    GraphGenerator.createDominatorTreeOutput(tree).writeToFile(out)
+                    GraphGenerator.createDominatorTreeOutput(tree.first).writeToFile(out)
                     out.close()
                 }
             }
@@ -67,6 +68,11 @@ fun main(args: Array<String>) {
             }
             // Output is handled after optimizations
             Actions.OUT -> {}
+            Actions.SSA_PHI -> {
+                val ssaProgram = SSAClimber.applyToProgram(cookedProgram)
+//                val prettyJsonPrinter = Json { prettyPrint = true }
+//                println(prettyJsonPrinter.encodeToString(ssaProgram))
+            }
 
             Actions.CFG -> {
                 cfgProgram.graphs.forEach { cfg ->
@@ -76,11 +82,12 @@ fun main(args: Array<String>) {
                 }
             }
         }
-        if (Actions.OUT in actions) {
-            val testProgram = cfgProgram.toCookedProgram()
-            val prettyJsonPrinter = Json { prettyPrint = true }
-            println(prettyJsonPrinter.encodeToString(testProgram))
-        }
+        val ssaProgram = SSAClimber.applyToProgram(cookedProgram)
+//        if (Actions.OUT in actions) {
+//            val testProgram = cfgProgram.toCookedProgram()
+//            val prettyJsonPrinter = Json { prettyPrint = true }
+//            println(prettyJsonPrinter.encodeToString(testProgram))
+//        }
     }
 }
 
@@ -98,11 +105,12 @@ fun handleArgs(args: Array<String>): List<Actions> {
             "--domtree" -> actions.add(Actions.DOMINATOR_TREE)
             "--domfront" -> actions.add(Actions.DOMINANCE_FRONTIER)
             "--cfg" -> actions.add(Actions.CFG)
+            "--ssaphi" -> actions.add(Actions.SSA_PHI)
         }
     }
     return actions
 }
 
 enum class Actions {
-    LVN, DCE, REACH, OUT, LIVE, CONST_PROP, DOMINATORS, DOMINATOR_TREE, DOMINANCE_FRONTIER, CFG
+    LVN, DCE, REACH, OUT, LIVE, CONST_PROP, DOMINATORS, DOMINATOR_TREE, DOMINANCE_FRONTIER, CFG, SSA_PHI
 }

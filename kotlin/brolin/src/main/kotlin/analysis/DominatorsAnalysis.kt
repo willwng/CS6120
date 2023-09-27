@@ -163,12 +163,12 @@ fun Map<String, DominatorMap>.prettyPrintMaps(): String {
     return sb.toString()
 }
 
-fun Map<String, DominatorTree>.prettyPrintTrees(): String {
+fun Map<String, Pair<DominatorTree, TreeTranslator>>.prettyPrintTrees(): String {
     val sb = StringBuilder()
     sb.appendLine("---Dominator tree---")
-    forEach { (func, tree) ->
+    forEach { (func, tt) ->
         sb.appendLine("Function $func:")
-        tree.prettyPrint(sb = sb)
+        tt.first.prettyPrint(sb = sb)
         sb.appendLine()
     }
     return sb.toString()
