@@ -76,7 +76,7 @@ fun main(args: Array<String>) {
 
             Actions.CFG -> {
                 cfgProgram.graphs.forEach { cfg ->
-                    val out = PrintWriter(FileOutputStream("${cfg.function.name}-cfg.dot"))
+                    val out = PrintWriter(FileOutputStream("${cfg.fnName}-cfg.dot"))
                     GraphGenerator.createGraphOutput<LiveVariablesAnalysis>(cfg = cfg, null).writeToFile(out)
                     out.close()
                 }

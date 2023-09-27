@@ -46,7 +46,7 @@ object GraphGenerator {
 
     fun <T> createGraphOutput(cfg: CFG, dataflowResult: DataflowResult<T>? = null): DotWriter {
         val dotWriter = DotWriter()
-        dotWriter.startGraph(name = cfg.function.name)
+        dotWriter.startGraph(name = cfg.fnName)
 
         // Keep track of the numbering of each CFG node
         val nodeMap = cfg.nodes.mapIndexed { i, node -> node to i }.toMap()
@@ -78,7 +78,7 @@ object GraphGenerator {
 
     fun createDominatorTreeOutput(dominatorTree: DominatorTree): DotWriter {
         val dotWriter = DotWriter()
-        dotWriter.startGraph(name = dominatorTree.cfg.function.name + "_dominator")
+        dotWriter.startGraph(name = dominatorTree.cfg.fnName + "_dominator")
         val nodeMap = dominatorTree.nodes.map { it.cfgNode }.mapIndexed { i, node -> node to i }.toMap()
 
         dominatorTree.nodes.forEach {
@@ -106,8 +106,8 @@ object GraphGenerator {
 
     fun <T> writeDotOutput(cfgProgram: CFGProgram, dataflowAnalysis: Map<String, DataflowResult<T>>, fileExt: String) {
         cfgProgram.graphs.forEach {
-            val out = PrintWriter(FileOutputStream("${it.function.name}-$fileExt.dot"))
-            createGraphOutput(it, dataflowAnalysis[it.function.name]).writeToFile(out)
+            val out = PrintWriter(FileOutputStream("${it.fnName}-$fileExt.dot"))
+            createGraphOutput(it, dataflowAnalysis[it.fnName]).writeToFile(out)
             out.close()
         }
     }

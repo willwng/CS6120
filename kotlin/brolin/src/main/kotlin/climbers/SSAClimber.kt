@@ -42,7 +42,7 @@ data class PhiNode(
         return ValueOperation(
             op = Operator.PHI,
             dest = varName,
-            type = Type(type = "TODO", baseType = null),
+            type = type,
             args = args,
             labels = labels
         )
@@ -59,7 +59,7 @@ object SSAClimber : Climber {
         val dominatorTrees = DominatorsAnalysis.getDominatorTrees(cfgProgram)
         val freshNameGearLoop = FreshNameGearLoop(program)
         cfgProgram.graphs.forEach { cfg ->
-            val name = cfg.function.name
+            val name = cfg.fnName
             convertToSSA(
                 cfg = cfg,
                 dominanceFrontier = dominanceFrontiers[name]!!,
@@ -90,13 +90,20 @@ object SSAClimber : Climber {
                         if (block.has(v)) {
                             block.phiOf(v)?.labelToLastName?.set(d.name, v)
                         } else {
-                            block.phiNodes.add(PhiNode(varName = v, labelToLastName = mutableMapOf(d.name to v)))
+                            val type =
+                                (d.cfgNode.block.instructions.first { insn -> insn is WriteInstruction && insn.dest == v } as WriteInstruction).type
+                            block.phiNodes.add(
+                                PhiNode(
+                                    varName = v,
+                                    type = type,
+                                    labelToLastName = mutableMapOf(d.name to v)
+                                )
+                            )
                             defV.add(block)
                         }
                     }
             }
         }
-
         return phiBlockTranslator
     }
 
@@ -194,11 +201,14 @@ object SSAClimber : Climber {
 //        }
 
         cfg.nodes.forEach {
+            val phiBlock = phiBlockTranslator[it]!!
             it.replaceInsns(
-                phiBlockTranslator[it]!!.phiNodes.map { phi -> phi.toInstruction() }
-                        + it.block.instructions
+                phiBlock.phiNodes.map { phi -> phi.toInstruction() }
+                        + phiBlock.cfgNode.block.instructions
             )
         }
+
+        println(cfg)
     }
 
 }

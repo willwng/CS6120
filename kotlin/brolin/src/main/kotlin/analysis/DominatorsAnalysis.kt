@@ -106,19 +106,19 @@ object DominatorsAnalysis {
 
     /** Builds and returns a map for function CFGs to DominatorTrees */
     fun getDominatorTrees(program: CFGProgram): Map<String, Pair<DominatorTree, TreeTranslator>> =
-        program.graphs.associate { cfg -> cfg.function.name to getDominatorTrees(cfg = cfg) }
+        program.graphs.associate { cfg -> cfg.fnName to getDominatorTrees(cfg = cfg) }
 
     /** Returns a DominatorMap for each CFG. The DominatorMap maps a cfg node to the nodes it dominates */
     fun getDominators(program: CFGProgram): Map<String, DominatorMap> =
-        program.graphs.associate { cfg -> cfg.function.name to getDominators(cfg = cfg).first }
+        program.graphs.associate { cfg -> cfg.fnName to getDominators(cfg = cfg).first }
 
     fun getDominated(program: CFGProgram): Map<String, DominatorMap> =
-        program.graphs.associate { cfg -> cfg.function.name to getDominators(cfg = cfg).second }
+        program.graphs.associate { cfg -> cfg.fnName to getDominators(cfg = cfg).second }
 
     /** Returns a DominanceFrontier for each CFG. The DominanceFrontier maps a cfg node to the nodes in its frontier */
     fun getDominanceFrontiers(program: CFGProgram): Map<String, DominatorMap> =
         program.graphs.associate { cfg ->
-            cfg.function.name to cfg.nodes.associateWith { computeDominanceFrontier(cfgNode = it, cfg = cfg) }
+            cfg.fnName to cfg.nodes.associateWith { computeDominanceFrontier(cfgNode = it, cfg = cfg) }
         }
 }
 

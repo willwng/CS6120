@@ -35,7 +35,9 @@ open class CFGNode(
 /** A class to represent a control-flow graph of a function */
 data class CFG(
     // The function from which this CFG was constructed
-    val function: CookedFunction,
+    val fnName: String,
+    val fnArgs: List<Argument> = listOf(),
+    val fnType: Type? = null,
     val entry: CFGNode,
     val nodes: MutableList<CFGNode> = mutableListOf()
 ) {
@@ -55,7 +57,7 @@ data class CFG(
             it.predecessors.removeAll(unreachableNodes)
         }
 
-        return CFG(function = function, entry = entry, nodes = reachableNodes.toMutableList())
+        return CFG(fnName, fnArgs, fnType, entry, nodes = reachableNodes.toMutableList())
     }
 
     /** Converts a CFG back into a function */
@@ -81,9 +83,9 @@ data class CFG(
         }
 
         return CookedFunction(
-            name = function.name,
-            args = function.args,
-            type = function.type,
+            name = fnName,
+            args = fnArgs,
+            type = fnType,
             instructions = instructions
         )
     }
@@ -119,7 +121,13 @@ data class CFG(
                 node.successors.addAll(successors)
             }
             val entry = nodes.firstOrNull() ?: CFGNode.EmptyCFG
-            return CFG(function, entry, if (nodes.isNotEmpty()) nodes else mutableListOf(CFGNode.EmptyCFG))
+            return CFG(
+                function.name,
+                function.args,
+                function.type,
+                entry,
+                if (nodes.isNotEmpty()) nodes else mutableListOf(CFGNode.EmptyCFG)
+            )
         }
     }
 }

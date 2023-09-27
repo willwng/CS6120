@@ -28,7 +28,7 @@ class DataflowAnalysis<T : DataflowValue>(private val beta: DataflowBeta<T>) {
 
     fun applyToProgram(program: CFGProgram): Map<String, DataflowResult<T>> =
         program.graphs.associate { cfg ->
-            cfg.function.name to worklist(cfg)
+            cfg.fnName to worklist(cfg)
         }
 
     /** A generic worklist algorithm used for solving both forward and backward data flow problems */
