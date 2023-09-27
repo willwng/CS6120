@@ -18,6 +18,10 @@ open class CFGNode(
         defines.map { it.dest }.toSet()
     }
 
+    fun replaceInsns(insns: List<CookedInstructionOrLabel>) {
+        block = BasicBlock(insns)
+    }
+
     override fun toString() = block.toString()
 
     companion object EmptyCFG : CFGNode(

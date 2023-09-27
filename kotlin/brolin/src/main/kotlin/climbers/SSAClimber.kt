@@ -33,16 +33,18 @@ data class PhiBlock(
 
 data class PhiNode(
     var varName: String,
+    val type: Type,
     /** CFGNode.name to variable name. Originally the source name, then new fresh ones */
     val labelToLastName: MutableMap<String, String>
 ) {
     fun toInstruction(): CookedInstruction {
+        val (labels, args) = labelToLastName.toList().unzip()
         return ValueOperation(
             op = Operator.PHI,
             dest = varName,
             type = Type(type = "TODO", baseType = null),
-            args = labelToLastName.values.toList(),
-            labels = labelToLastName.keys.toList()
+            args = args,
+            labels = labels
         )
     }
 }
@@ -137,7 +139,7 @@ object SSAClimber : Climber {
             instr
         }
 
-        phiBlock.cfgNode.block = BasicBlock(instructions = renamedInstructions)
+        phiBlock.cfgNode.replaceInsns(renamedInstructions)
 
         // Update successors to read from the latest new value
         phiBlock.cfgNode.successors.forEach { s ->
@@ -160,7 +162,7 @@ object SSAClimber : Climber {
         }
 
         // Pop all the names we just pushed onto the stacks
-        pushedVars.forEach { (varName, numPushes) -> for (i in 1..numPushes) stack[varName]!!.removeLast() }
+        pushedVars.forEach { (varName, numPushes) -> repeat(numPushes) { stack[varName]!!.removeLast() } }
 
     }
 
@@ -186,9 +188,16 @@ object SSAClimber : Climber {
             freshNames = freshNames,
             stack = stack,
         )
-        phiBlockTranslator.values.forEach {
-            println(it.cfgNode.block)
-            println(it.phiNodes)
+//        phiBlockTranslator.values.forEach {
+//            println(it.cfgNode.block)
+//            println(it.phiNodes)
+//        }
+
+        cfg.nodes.forEach {
+            it.replaceInsns(
+                phiBlockTranslator[it]!!.phiNodes.map { phi -> phi.toInstruction() }
+                        + it.block.instructions
+            )
         }
     }
 
