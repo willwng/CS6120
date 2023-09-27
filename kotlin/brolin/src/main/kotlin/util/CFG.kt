@@ -14,6 +14,10 @@ open class CFGNode(
         nameToDefn.values.toSet()
     }
 
+    val definedNamesWithType: Map<String, Type> by lazy {
+        defines.associate { it.dest to it.type }
+    }
+
     val definedNames: Set<String> by lazy {
         defines.map { it.dest }.toSet()
     }

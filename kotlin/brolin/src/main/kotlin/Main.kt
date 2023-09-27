@@ -1,3 +1,4 @@
+
 import analysis.DominatorsAnalysis
 import analysis.dataflow.ConstantPropAnalysis
 import analysis.dataflow.LiveVariablesAnalysis
@@ -69,7 +70,7 @@ fun main(args: Array<String>) {
             // Output is handled after optimizations
             Actions.OUT -> {}
             Actions.SSA_PHI -> {
-                val ssaProgram = SSAClimber.applyToProgram(cookedProgram)
+//                val ssaProgram = SSAClimber.applyToProgram(cookedProgram)
 //                val prettyJsonPrinter = Json { prettyPrint = true }
 //                println(prettyJsonPrinter.encodeToString(ssaProgram))
             }
@@ -82,13 +83,15 @@ fun main(args: Array<String>) {
                 }
             }
         }
-        val ssaProgram = SSAClimber.applyToProgram(cookedProgram)
+    }
 //        if (Actions.OUT in actions) {
 //            val testProgram = cfgProgram.toCookedProgram()
 //            val prettyJsonPrinter = Json { prettyPrint = true }
 //            println(prettyJsonPrinter.encodeToString(testProgram))
 //        }
-    }
+    val ssaProgram = SSAClimber.applyToProgram(cookedProgram)
+    val prettyJsonPrinter = Json { prettyPrint = true }
+    println(prettyJsonPrinter.encodeToString(ssaProgram))
 }
 
 fun handleArgs(args: Array<String>): List<Actions> {

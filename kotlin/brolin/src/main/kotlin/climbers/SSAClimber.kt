@@ -1,8 +1,14 @@
 package climbers
 
-import analysis.*
+import analysis.DominatorMap
+import analysis.DominatorTree
+import analysis.DominatorsAnalysis
+import analysis.TreeTranslator
 import trees.*
-import util.*
+import util.CFG
+import util.CFGNode
+import util.CFGProgram
+import util.FreshNameGearLoop
 
 typealias PhiBlockTranslator = Map<CFGNode, PhiBlock>
 typealias StackVarMap = Map<String, ArrayDeque<String>>
@@ -42,7 +48,7 @@ data class PhiNode(
         return ValueOperation(
             op = Operator.PHI,
             dest = varName,
-            type = Type(type = "TODO", baseType = null),
+            type = type,
             args = args,
             labels = labels
         )
@@ -50,8 +56,6 @@ data class PhiNode(
 }
 
 object SSAClimber : Climber {
-    init {
-    }
 
     override fun applyToProgram(program: CookedProgram): CookedProgram {
         val cfgProgram = CFGProgram.of(program)
@@ -79,10 +83,12 @@ object SSAClimber : Climber {
         val varsToDef = vars.associateWith { v ->
             phiBlockTranslator.values.filter { node -> v in node.cfgNode.definedNames }.toSet().toMutableList()
         }.toMutableMap()
+        val varsToType = phiBlockTranslator.values.map { node -> node.cfgNode.definedNamesWithType }
+            .fold(mapOf<String, Type>()) { acc, map -> acc + map }
 
         varsToDef.forEach { (v, defV) ->
             // Blocks where [v] is assigned
-            for (i in 0 until defV.size) {
+            for (i in 0..<defV.size) {
                 val d = defV[i]
                 // Dominance frontier of [d], add phi node if we haven't already
                 dominanceFrontier[d.cfgNode]?.mapNotNull { phiBlockTranslator[it] }
@@ -90,7 +96,13 @@ object SSAClimber : Climber {
                         if (block.has(v)) {
                             block.phiOf(v)?.labelToLastName?.set(d.name, v)
                         } else {
-                            block.phiNodes.add(PhiNode(varName = v, labelToLastName = mutableMapOf(d.name to v)))
+                            block.phiNodes.add(
+                                PhiNode(
+                                    varName = v,
+                                    labelToLastName = mutableMapOf(d.name to v),
+                                    type = varsToType[v]!!
+                                )
+                            )
                             defV.add(block)
                         }
                     }
