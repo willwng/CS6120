@@ -1,8 +1,14 @@
 package climbers
 
-import analysis.*
+import analysis.DominatorMap
+import analysis.DominatorTree
+import analysis.DominatorsAnalysis
+import analysis.TreeTranslator
 import trees.*
-import util.*
+import util.CFG
+import util.CFGNode
+import util.CFGProgram
+import util.FreshNameGearLoop
 
 typealias PhiBlockTranslator = Map<CFGNode, PhiBlock>
 typealias StackVarMap = Map<String, ArrayDeque<String>>
@@ -32,7 +38,8 @@ data class PhiBlock(
 }
 
 data class PhiNode(
-    var varName: String,
+    val originalVarName: String,
+    var varName: String = originalVarName,
     val type: Type,
     /** CFGNode.name to variable name. Originally the source name, then new fresh ones */
     val labelToLastName: MutableMap<String, String>
@@ -50,8 +57,6 @@ data class PhiNode(
 }
 
 object SSAClimber : Climber {
-    init {
-    }
 
     override fun applyToProgram(program: CookedProgram): CookedProgram {
         val cfgProgram = CFGProgram.of(program)
@@ -150,8 +155,9 @@ object SSAClimber : Climber {
 
         // Update successors to read from the latest new value
         phiBlock.cfgNode.successors.forEach { s ->
-            phiBlockTranslator[s]!!.phiNodes.forEach {
-                it.labelToLastName[phiBlock.name] = stack[it.varName]!!.last()
+            phiBlockTranslator[s]!!.phiNodes.forEach { p ->
+                if (p.labelToLastName.containsKey(phiBlock.name))
+                    p.labelToLastName[phiBlock.name] = stack[p.originalVarName]!!.last()
             }
         }
 
@@ -201,11 +207,13 @@ object SSAClimber : Climber {
 //        }
 
         cfg.nodes.forEach {
-            val phiBlock = phiBlockTranslator[it]!!
-            it.replaceInsns(
-                phiBlock.phiNodes.map { phi -> phi.toInstruction() }
-                        + phiBlock.cfgNode.block.instructions
-            )
+            val phiInstructions = phiBlockTranslator[it]!!.phiNodes.map { phi -> phi.toInstruction() }
+            val newInstructions =
+                if (it.block.instructions.firstOrNull() is CookedLabel)
+                    listOf(it.block.instructions.first()) + phiInstructions + it.block.instructions.drop(1)
+                else
+                    phiInstructions + it.block.instructions
+            it.replaceInsns(newInstructions)
         }
 
         println(cfg)
