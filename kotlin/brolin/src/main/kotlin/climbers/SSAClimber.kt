@@ -38,7 +38,8 @@ data class PhiBlock(
 }
 
 data class PhiNode(
-    var varName: String,
+    val originalVarName: String,
+    var varName: String = originalVarName,
     val type: Type,
     /** CFGNode.name to variable name. Originally the source name, then new fresh ones */
     val labelToLastName: MutableMap<String, String>
@@ -98,7 +99,7 @@ object SSAClimber : Climber {
                         } else {
                             block.phiNodes.add(
                                 PhiNode(
-                                    varName = v,
+                                    originalVarName = v,
                                     labelToLastName = mutableMapOf(d.name to v),
                                     type = varsToType[v]!!
                                 )
@@ -155,8 +156,9 @@ object SSAClimber : Climber {
 
         // Update successors to read from the latest new value
         phiBlock.cfgNode.successors.forEach { s ->
-            phiBlockTranslator[s]!!.phiNodes.forEach {
-                it.labelToLastName[phiBlock.name] = stack[it.varName]!!.last()
+            phiBlockTranslator[s]!!.phiNodes.forEach { p ->
+                if (p.labelToLastName.containsKey(phiBlock.name))
+                    p.labelToLastName[phiBlock.name] = stack[p.originalVarName]!!.last()
             }
         }
 
@@ -206,10 +208,13 @@ object SSAClimber : Climber {
 //        }
 
         cfg.nodes.forEach {
-            it.replaceInsns(
-                phiBlockTranslator[it]!!.phiNodes.map { phi -> phi.toInstruction() }
-                        + it.block.instructions
-            )
+            val phiInstructions = phiBlockTranslator[it]!!.phiNodes.map { phi -> phi.toInstruction() }
+            val newInstructions =
+                if (it.block.instructions.firstOrNull() is CookedLabel)
+                    listOf(it.block.instructions.first()) + phiInstructions + it.block.instructions.drop(1)
+                else
+                    phiInstructions + it.block.instructions
+            it.replaceInsns(newInstructions)
         }
     }
 
