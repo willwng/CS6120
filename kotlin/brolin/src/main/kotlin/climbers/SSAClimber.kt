@@ -85,26 +85,29 @@ object SSAClimber : Climber {
             phiBlockTranslator.values.filter { node -> v in node.cfgNode.definedNames }.toSet().toMutableList()
         }.toMutableMap()
 
+        val varsToType = phiBlockTranslator.values.map { node -> node.cfgNode.definedNamesWithType }
+            .fold(mapOf<String, Type>()) { acc, map -> acc + map }
+
         varsToDef.forEach { (v, defV) ->
             // Blocks where [v] is assigned
-            for (i in 0..<defV.size) {
+            var i = 0
+            while (i < defV.size) {
                 val d = defV[i]
                 // Dominance frontier of [d], add phi node if we haven't already
                 dominanceFrontier[d.cfgNode]?.mapNotNull { phiBlockTranslator[it] }
                     ?.forEach { block ->
                         if (!block.has(v)) {
-                            val type =
-                                (d.cfgNode.block.instructions.first { insn -> insn is WriteInstruction && insn.dest == v } as WriteInstruction).type
                             block.phiNodes.add(
                                 PhiNode(
                                     originalVarName = v,
-                                    type = type,
+                                    type = varsToType[v]!!,
                                     labelToLastName = mutableMapOf()
                                 )
                             )
                             defV.add(block)
                         }
                     }
+                i++
             }
         }
         return phiBlockTranslator
