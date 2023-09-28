@@ -87,7 +87,7 @@ object SSAClimber : Climber {
 
         varsToDef.forEach { (v, defV) ->
             // Blocks where [v] is assigned
-            for (i in 0 until defV.size) {
+            for (i in 0..<defV.size) {
                 val d = defV[i]
                 // Dominance frontier of [d], add phi node if we haven't already
                 dominanceFrontier[d.cfgNode]?.mapNotNull { phiBlockTranslator[it] }
@@ -156,8 +156,7 @@ object SSAClimber : Climber {
         // Update successors to read from the latest new value
         phiBlock.cfgNode.successors.forEach { s ->
             phiBlockTranslator[s]!!.phiNodes.forEach { p ->
-                if (p.labelToLastName.containsKey(phiBlock.name))
-                    p.labelToLastName[phiBlock.name] = stack[p.originalVarName]!!.last()
+                p.labelToLastName[phiBlock.name] = stack[p.originalVarName]!!.last()
             }
         }
 
@@ -191,7 +190,7 @@ object SSAClimber : Climber {
         val phiBlockTranslator = insertPhiNodes(cfg = cfg, dominanceFrontier = dominanceFrontier, vars = vars)
 
         // stack[v] is a stack of variable names (for every variable v)
-        val stack = vars.associateWith { ArrayDeque<String>() }
+        val stack = vars.associateWith { ArrayDeque(listOf(it)) }
         rename(
             vars = vars,
             phiBlock = phiBlockTranslator.translate(cfg.entry),
@@ -216,7 +215,7 @@ object SSAClimber : Climber {
             it.replaceInsns(newInstructions)
         }
 
-        println(cfg)
+//        println(cfg)
     }
 
 }
