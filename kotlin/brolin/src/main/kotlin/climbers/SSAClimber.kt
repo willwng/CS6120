@@ -156,6 +156,7 @@ object SSAClimber : Climber {
         // Update successors to read from the latest new value
         phiBlock.cfgNode.successors.forEach { s ->
             phiBlockTranslator[s]!!.phiNodes.forEach { p ->
+                // TODO: If this is empty, then the variable is undefined on a path. what do we do?
                 p.labelToLastName[phiBlock.name] = stack[p.originalVarName]!!.last()
             }
         }
@@ -190,7 +191,7 @@ object SSAClimber : Climber {
         val phiBlockTranslator = insertPhiNodes(cfg = cfg, dominanceFrontier = dominanceFrontier, vars = vars)
 
         // stack[v] is a stack of variable names (for every variable v)
-        val stack = vars.associateWith { ArrayDeque(listOf(it)) }
+        val stack = vars.associateWith { ArrayDeque<String>() }
         rename(
             vars = vars,
             phiBlock = phiBlockTranslator.translate(cfg.entry),
