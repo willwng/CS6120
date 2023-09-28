@@ -24,10 +24,10 @@ data class PhiBlock(
     val name: String = cfgNode.name
 ) {
     fun has(name: String): Boolean =
-        phiNodes.any { it.varName == name }
+        phiNodes.any { it.dest == name }
 
     fun phiOf(name: String): PhiNode? {
-        return phiNodes.firstOrNull { it.varName == name }
+        return phiNodes.firstOrNull { it.dest == name }
     }
 
     companion object {
@@ -39,16 +39,16 @@ data class PhiBlock(
 
 data class PhiNode(
     val originalVarName: String,
-    var varName: String = originalVarName,
+    var dest: String = originalVarName,
     val type: Type,
-    /** CFGNode.name to variable name. Originally the source name, then new fresh ones */
+    /** CFGNode.name to argument */
     val labelToLastName: MutableMap<String, String>
 ) {
     fun toInstruction(): CookedInstruction {
         val (labels, args) = labelToLastName.toList().unzip()
         return ValueOperation(
             op = Operator.PHI,
-            dest = varName,
+            dest = dest,
             type = type,
             args = args,
             labels = labels
@@ -92,16 +92,14 @@ object SSAClimber : Climber {
                 // Dominance frontier of [d], add phi node if we haven't already
                 dominanceFrontier[d.cfgNode]?.mapNotNull { phiBlockTranslator[it] }
                     ?.forEach { block ->
-                        if (block.has(v)) {
-                            block.phiOf(v)?.labelToLastName?.set(d.name, v)
-                        } else {
+                        if (!block.has(v)) {
                             val type =
                                 (d.cfgNode.block.instructions.first { insn -> insn is WriteInstruction && insn.dest == v } as WriteInstruction).type
                             block.phiNodes.add(
                                 PhiNode(
                                     originalVarName = v,
                                     type = type,
-                                    labelToLastName = mutableMapOf(d.name to v)
+                                    labelToLastName = mutableMapOf()
                                 )
                             )
                             defV.add(block)
@@ -126,9 +124,9 @@ object SSAClimber : Climber {
         // It is important that we rename phi nodes first. We always assume our RHS was updated by a predecessor
         // But here we make a fresh name for the LHS
         phiBlock.phiNodes.forEach { phiNode ->
-            val oldName = phiNode.varName
+            val oldName = phiNode.dest
             val newName = freshNames.get(oldName)
-            phiNode.varName = newName
+            phiNode.dest = newName
             stack[oldName]!!.addLast(newName)
             pushedVars[oldName] = pushedVars[oldName]!! + 1
         }
@@ -191,7 +189,7 @@ object SSAClimber : Climber {
         val phiBlockTranslator = insertPhiNodes(cfg = cfg, dominanceFrontier = dominanceFrontier, vars = vars)
 
         // stack[v] is a stack of variable names (for every variable v)
-        val stack = vars.associateWith { ArrayDeque<String>() }
+        val stack = vars.associateWith { ArrayDeque(listOf(it)) }
         rename(
             vars = vars,
             phiBlock = phiBlockTranslator.translate(cfg.entry),
