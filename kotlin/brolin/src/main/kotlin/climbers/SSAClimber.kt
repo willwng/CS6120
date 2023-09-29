@@ -38,6 +38,7 @@ data class PhiBlock(
 }
 
 data class PhiNode(
+    /** The name of the variable in the original bril */
     val originalVarName: String,
     var dest: String = originalVarName,
     val type: Type,
@@ -53,6 +54,10 @@ data class PhiNode(
             args = args,
             labels = labels
         )
+    }
+
+    companion object {
+        const val UNDEFINED = "__undefined"
     }
 }
 
@@ -158,13 +163,7 @@ object SSAClimber : Climber {
         // Update successors to read from the latest new value
         phiBlock.cfgNode.successors.forEach { s ->
             phiBlockTranslator[s]!!.phiNodes.forEach { p ->
-                val last = stack[p.originalVarName]!!.lastOrNull()
-                if (last != null)
-                    p.labelToLastName[phiBlock.name] = last
-                else
-                    // TODO: Generate a designated name for undefined vars
-                    p.labelToLastName[phiBlock.name] = "__undefined"
-
+                p.labelToLastName[phiBlock.name] = stack[p.originalVarName]!!.lastOrNull() ?: PhiNode.UNDEFINED
             }
         }
 
