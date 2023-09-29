@@ -24,7 +24,7 @@ object SSADownClimber : Climber {
             node.block.instructions.filter { it.isPhi() }.forEach { phi ->
                 (phi as ValueOperation)
                 phi.args.zip(phi.labels)
-                    .filter { (arg, _) -> arg != PhiNode.UNDEFINED }
+                    .filter { (arg, _) -> arg != PhiNode.UNDEFINED && arg != phi.dest }
                     .forEach { (arg, label) ->
                         val defNode = nameToNode[label]!!
                         val copyInstruction = ValueOperation(
