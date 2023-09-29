@@ -1,0 +1,30 @@
+[SSA Code](https://github.com/willwng/CS6120/tree/main/kotlin/brolin/src/main/kotlin/climbers)
+
+**Summary**
+- We (Will and I) did our implementation in Kotlin (built on top of the code from previous lessons).
+- We implemented methods to translate CFGs into and out of SSA form.
+- This was the hardest one yet! The testing is not fully complete, but we will try to get 100% correctness on all the
+benchmarks.
+
+**Implementation details**
+- The overall algorithm was similar to that shown in class.
+- Undefined variables: If the stack for a variable is empty when renaming the RHS of phi nodes of a node's successors,
+then the variable is undefined on that path, so we don't add any names to the phi node.
+- We place phi instructions at the beginning of each block or directly below the label if there exists one.
+- Brili throws errors when it is possible to reach a phi node before passing two labels, so we subverted this by
+adding a dummy labeled entry node. This is fine because when converting out of SSA, all copy instructions are placed in
+blocks from which each definition "originated".
+
+**How did you test it? Which test inputs did you use? Do you have any quantitative results to report?**
+- Testing was straightforward using our brench setup from last time. Our into-ssa form had around 90+% correctness on
+benchmarks using the phi extension for brili. Out of ssa had slightly less correctness; we plan to nail down correctness
+for into-ssa before getting correctness all the way for out of ssa.
+
+**What was the hardest part of the task? How did you solve this problem?**
+- A very tricky part of this assignment was how to handle when variables are not defined on particular paths. We noticed
+this happens when the stack is empty during renaming, so we decided to "prune" out the assignments for which this
+happened.
+- We also noticed lots of small caveats that weren't in the pseudocode. For example, we had to rename the destination of
+the phi node.
+- Finally, testing was also pretty tricky since we had several bugs that only popped up when CFGs were complicated
+(which made them harder to test by hand)
