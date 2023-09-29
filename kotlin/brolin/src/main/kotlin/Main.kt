@@ -9,6 +9,7 @@ import analysis.prettyPrintTrees
 import climbers.DCEClimber
 import climbers.LVNClimber
 import climbers.SSAClimber
+import climbers.SSADownClimber
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromJsonElement
@@ -90,8 +91,10 @@ fun main(args: Array<String>) {
 //            println(prettyJsonPrinter.encodeToString(testProgram))
 //        }
     val ssaProgram = SSAClimber.applyToProgram(cookedProgram)
+    val unssaProgram = SSADownClimber.applyToProgram(ssaProgram)
+
     val prettyJsonPrinter = Json { prettyPrint = true }
-    println(prettyJsonPrinter.encodeToString(ssaProgram))
+    println(prettyJsonPrinter.encodeToString(unssaProgram))
 }
 
 fun handleArgs(args: Array<String>): List<Actions> {
