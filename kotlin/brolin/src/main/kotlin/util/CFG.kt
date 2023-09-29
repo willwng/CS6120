@@ -124,13 +124,26 @@ data class CFG(
                 successors.forEach { succ -> succ.predecessors.add(node) }
                 node.successors.addAll(successors)
             }
+
             val entry = nodes.firstOrNull() ?: CFGNode.EmptyCFG
+
+            // Hack: Add an empty entry node to each CFG. This allows us to have phi instructions at the beginning of
+            // any node
+            val newName = freshLabels.get()
+            val entrier = if (entry == CFGNode.EmptyCFG) entry else CFGNode(
+                name = newName,
+                block = BasicBlock(listOf(CookedLabel(newName))),
+                successors = mutableListOf(entry),
+                predecessors = mutableListOf()
+            )
+            if (entry != CFGNode.EmptyCFG) entry.predecessors.add(entrier)
+
             return CFG(
                 function.name,
                 function.args,
                 function.type,
-                entry,
-                if (nodes.isNotEmpty()) nodes else mutableListOf(CFGNode.EmptyCFG)
+                entrier,
+                (if (nodes.isNotEmpty()) listOf(entrier) + nodes else mutableListOf(CFGNode.EmptyCFG)) as MutableList<CFGNode>
             )
         }
     }
