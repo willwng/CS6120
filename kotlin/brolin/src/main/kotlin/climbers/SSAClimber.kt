@@ -158,7 +158,10 @@ object SSAClimber : Climber {
         phiBlock.cfgNode.successors.forEach { s ->
             phiBlockTranslator[s]!!.phiNodes.forEach { p ->
                 // TODO: If this is empty, then the variable is undefined on a path. what do we do?
-                p.labelToLastName[phiBlock.name] = stack[p.originalVarName]!!.last()
+                val rhs = stack[p.originalVarName]!!.lastOrNull()
+                if (rhs != null && (rhs != p.dest || rhs == p.originalVarName)) {
+                    p.labelToLastName[phiBlock.name] = rhs
+                }
             }
         }
 
@@ -188,11 +191,16 @@ object SSAClimber : Climber {
         freshNames: FreshNameGearLoop,
     ) {
         // Gather all the variable definitions and the blocks which define them
-        val vars = cfg.nodes.map { node -> node.definedNames }.fold(emptySet<String>()) { acc, defs -> acc.union(defs) }
+        val vars = cfg.nodes.map { node -> node.definedNames }
+            .fold(emptySet<String>()) { acc, defs -> acc.union(defs) } + cfg.fnArgs.map { it.name }
+
         val phiBlockTranslator = insertPhiNodes(cfg = cfg, dominanceFrontier = dominanceFrontier, vars = vars)
 
         // stack[v] is a stack of variable names (for every variable v)
-        val stack = vars.associateWith { ArrayDeque(listOf(it)) }
+        val stack = vars.associateWith { ArrayDeque<String>() }
+        cfg.fnArgs.map { it.name }.forEach {
+            stack[it]!!.add(it)
+        }
         rename(
             vars = vars,
             phiBlock = phiBlockTranslator.translate(cfg.entry),

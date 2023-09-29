@@ -15,12 +15,9 @@ object SSADownClimber : Climber {
 
     private fun convertFromSSA(cfg: CFG) {
         val nameToNode = mutableMapOf<String, CFGNode>()  // Unique mapping since SSA
-        val defined = mutableSetOf<String>() // TODO making the possibly false assumption that if something used on RHS of phi is defined at all, it is defined at that exec point. I think this is true
         cfg.nodes.forEach { node ->
             nameToNode[node.name] = node
-            defined.addAll(node.definedNames)
         }
-        defined.addAll(cfg.fnArgs.map{it.name})
 
 //        println(varToDefiningNode.keys)
 //        println(cfg)
@@ -30,7 +27,7 @@ object SSADownClimber : Climber {
         cfg.nodes.forEach { node ->
             node.block.instructions.filter { it.isPhi() }.forEach { phi ->
                 (phi as ValueOperation)
-                phi.args.zip(phi.labels).filter { (arg, _) -> arg in defined }. forEach { (arg, label) ->
+                phi.args.zip(phi.labels).forEach { (arg, label) ->
 //                    println(arg)
                     val defNode = nameToNode[label]!!
 //                    if (defNode != null) {
