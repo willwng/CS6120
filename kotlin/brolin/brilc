@@ -1,5 +1,5 @@
 #!/bin/sh
 # Retrieve location of this script
-SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+SCRIPT_DIR=$( cd -- "$( dirname -- $0 )" &> /dev/null && pwd )
 # Run the gradle task quietly
 cd $SCRIPT_DIR && ./gradlew run -q --console=plain
