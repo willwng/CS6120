@@ -21,7 +21,12 @@ data class CookedFunction(
 ) : SourcedObject()
 
 @Serializable(with = CookedInstructionOrLabelSerializer::class)
-sealed interface CookedInstructionOrLabel
+sealed interface CookedInstructionOrLabel {
+    /** Returns if this instruction maintains control flow */
+    fun isControlFlow(): Boolean {
+        return (this is CookedInstruction && this.op in Operator.TERMINATORS)
+    }
+}
 
 @Serializable
 data class CookedLabel(val label: String) : CookedInstructionOrLabel, SourcedObject() {
