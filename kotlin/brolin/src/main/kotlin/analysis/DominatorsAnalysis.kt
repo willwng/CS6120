@@ -101,6 +101,12 @@ object DominatorsAnalysis {
         dominatedNodes.forEach { dom -> dominanceFrontier.addAll(dom.successors) }
         dominanceFrontier.removeAll(dominatedNodes)
 
+        // Edge case: A dominates predecessors of itself
+        if (cfgNode in dominatedNodes.map { dom -> dom.successors }
+                .fold(emptySet<CFGNode>()) { acc, cfgNodes -> acc + cfgNodes }) {
+            dominanceFrontier.add(cfgNode)
+        }
+
         return dominanceFrontier
     }
 

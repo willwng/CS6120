@@ -96,6 +96,7 @@ object SSAClimber : Climber {
                 // Dominance frontier of [d], add phi node if we haven't already
                 dominanceFrontier[d.cfgNode]?.mapNotNull { phiBlockTranslator[it] }
                     ?.forEach { block ->
+                        // Block does not have a phi node associated with variable v
                         if (!block.has(v)) {
                             block.phiNodes.add(
                                 PhiNode(
@@ -127,7 +128,7 @@ object SSAClimber : Climber {
         // It is important that we rename phi nodes first. We always assume our RHS was updated by a predecessor
         // But here we make a fresh name for the LHS
         phiBlock.phiNodes.forEach { phiNode ->
-            val oldName = phiNode.dest
+            val oldName = phiNode.originalVarName
             val newName = freshNames.get(oldName)
             phiNode.dest = newName
             stack[oldName]!!.addLast(newName)
@@ -138,7 +139,7 @@ object SSAClimber : Climber {
             var instr = it
             // replace each argument to instr with stack[old name]
             if (instr is ReadInstruction) {
-                instr = instr.withArgs(instr.args.map { arg -> stack[arg]?.last() ?: arg })
+                instr = instr.withArgs(instr.args.map { arg -> stack[arg]?.lastOrNull() ?: arg })
             }
             // replace the destination with a new name
             // push that new name onto stack[old name]
@@ -157,8 +158,13 @@ object SSAClimber : Climber {
         // Update successors to read from the latest new value
         phiBlock.cfgNode.successors.forEach { s ->
             phiBlockTranslator[s]!!.phiNodes.forEach { p ->
-                // TODO: If this is empty, then the variable is undefined on a path. what do we do?
-                p.labelToLastName[phiBlock.name] = stack[p.originalVarName]!!.last()
+                val last = stack[p.originalVarName]!!.lastOrNull()
+                if (last != null)
+                    p.labelToLastName[phiBlock.name] = last
+                else
+                    // TODO: Generate a designated name for undefined vars
+                    p.labelToLastName[phiBlock.name] = "__undefined"
+
             }
         }
 
@@ -188,11 +194,17 @@ object SSAClimber : Climber {
         freshNames: FreshNameGearLoop,
     ) {
         // Gather all the variable definitions and the blocks which define them
-        val vars = cfg.nodes.map { node -> node.definedNames }.fold(emptySet<String>()) { acc, defs -> acc.union(defs) }
+        val vars = cfg.nodes.map { node -> node.definedNames }
+            .fold(emptySet<String>()) { acc, defs -> acc.union(defs) } + cfg.fnArgs.map { it.name }
+
+
         val phiBlockTranslator = insertPhiNodes(cfg = cfg, dominanceFrontier = dominanceFrontier, vars = vars)
 
         // stack[v] is a stack of variable names (for every variable v)
-        val stack = vars.associateWith { ArrayDeque(listOf(it)) }
+        val stack = vars.associateWith { ArrayDeque<String>() }
+        cfg.fnArgs.map { it.name }.forEach {
+            stack[it]!!.add(it)
+        }
         rename(
             vars = vars,
             phiBlock = phiBlockTranslator.translate(cfg.entry),
@@ -202,10 +214,6 @@ object SSAClimber : Climber {
             freshNames = freshNames,
             stack = stack,
         )
-//        phiBlockTranslator.values.forEach {
-//            println(it.cfgNode.block)
-//            println(it.phiNodes)
-//        }
 
         cfg.nodes.forEach {
             val phiInstructions = phiBlockTranslator[it]!!.phiNodes.map { phi -> phi.toInstruction() }
@@ -216,8 +224,6 @@ object SSAClimber : Climber {
                     phiInstructions + it.block.instructions
             it.replaceInsns(newInstructions)
         }
-
-//        println(cfg)
     }
 
 }
