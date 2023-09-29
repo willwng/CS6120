@@ -76,7 +76,7 @@ data class CFG(
             instructions.addAll(blockInstructions)
             // Add jumps for non-terminators to retain control flow
             val lastInstruction = blockInstructions.last()
-            if (lastInstruction.isControlFlow()) {
+            if (!lastInstruction.isControlFlow()) {
                 assert(node.successors.size <= 1) // ret is optional -> possible to have no successors
                 if (node.successors.size == 1) {
                     instructions.add(EffectOperation.jump(node.successors.first().name))
