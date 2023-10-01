@@ -26,10 +26,6 @@ data class PhiBlock(
     fun has(name: String): Boolean =
         phiNodes.any { it.dest == name }
 
-    fun phiOf(name: String): PhiNode? {
-        return phiNodes.firstOrNull { it.dest == name }
-    }
-
     companion object {
         fun of(cfgNode: CFGNode): PhiBlock {
             return PhiBlock(cfgNode = cfgNode, phiNodes = mutableListOf())
@@ -57,7 +53,7 @@ data class PhiNode(
     }
 
     companion object {
-        const val UNDEFINED = "__undefined"
+        var UNDEFINED = "undefined"
     }
 }
 
@@ -68,6 +64,7 @@ object SSAClimber : Climber {
         val dominanceFrontiers = DominatorsAnalysis.getDominanceFrontiers(cfgProgram)
         val dominatorTrees = DominatorsAnalysis.getDominatorTrees(cfgProgram)
         val freshNameGearLoop = FreshNameGearLoop(program)
+        PhiNode.UNDEFINED = freshNameGearLoop.get(PhiNode.UNDEFINED)
         cfgProgram.graphs.forEach { cfg ->
             val name = cfg.fnName
             convertToSSA(

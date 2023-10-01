@@ -11,7 +11,7 @@ abstract class FreshStringGearLoop {
 
     fun get(base: String): String {
         do {
-            val candidate = "$base$i"
+            val candidate = "${base}_$i"
             if (candidate !in usedStrings) {
                 usedStrings.add(candidate)
                 return candidate
@@ -35,7 +35,7 @@ class FreshLabelGearLoop(program: CookedProgram) : FreshStringGearLoop() {
 }
 
 /** Fresh names for variables */
-class FreshNameGearLoop(program: CookedProgram): FreshStringGearLoop() {
+class FreshNameGearLoop(program: CookedProgram) : FreshStringGearLoop() {
     init {
         program.functions.forEach { function ->
             function.instructions.filterIsInstance<WriteInstruction>().forEach {
