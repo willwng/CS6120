@@ -11,6 +11,12 @@ abstract class FreshStringGearLoop {
 
     fun get(base: String): String {
         do {
+            // If we have not used it already, just take the base
+            if (base !in usedStrings) {
+                usedStrings.add(base)
+                return base
+            }
+            // Otherwise, try to generate a new string
             val candidate = "${base}_$i"
             if (candidate !in usedStrings) {
                 usedStrings.add(candidate)
