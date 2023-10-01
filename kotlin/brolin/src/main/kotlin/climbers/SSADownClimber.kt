@@ -1,11 +1,9 @@
 package climbers
 
-import trees.CookedInstructionOrLabel
-import trees.CookedProgram
-import trees.Operator
-import trees.ValueOperation
+import trees.*
 import util.CFG
 import util.CFGProgram
+import java.math.BigInteger
 
 /** A down-climber climbs in reverse. This one converts out of SSA form (replaces phi nodes with proper copies) */
 object SSADownClimber : Climber {
@@ -14,6 +12,14 @@ object SSADownClimber : Climber {
         cfgProgram.graphs.forEach { cfg -> convertFromSSA(cfg) }
         return cfgProgram.toCookedProgram()
     }
+
+    private fun Type.defaultValue() =
+        when {
+            isFinalType() && type == "float" -> FloatValue(0.0F)
+            isFinalType() && type == "bool" -> BooleanValue(false)
+            else -> IntValue(BigInteger.valueOf(0))
+        }
+
 
     private fun convertFromSSA(cfg: CFG) {
         val nameToNode = cfg.nodes.associateBy { it.name } // mapping from labels to CFG nodes
@@ -24,15 +30,24 @@ object SSADownClimber : Climber {
             node.block.instructions.filter { it.isPhi() }.forEach { phi ->
                 (phi as ValueOperation)
                 phi.args.zip(phi.labels)
-                    .filter { (arg, _) -> arg != PhiNode.UNDEFINED && arg != phi.dest }
+                    .filter { (arg, _) -> arg != phi.dest }
                     .forEach { (arg, label) ->
                         val defNode = nameToNode[label]!!
-                        val copyInstruction = ValueOperation(
-                            op = Operator.ID,
-                            dest = phi.dest,
-                            type = phi.type,
-                            args = listOf(arg)
-                        )
+                        val copyInstruction =
+                            if (arg == PhiNode.UNDEFINED) {
+                                ConstantInstruction(
+                                    dest = phi.dest,
+                                    type = phi.type,
+                                    value = phi.type.defaultValue()
+                                )
+                            } else {
+                                ValueOperation(
+                                    op = Operator.ID,
+                                    dest = phi.dest,
+                                    type = phi.type,
+                                    args = listOf(arg)
+                                )
+                            }
                         // Maintain control flow, keep the last instruction if needed
                         val last = defNode.block.instructions.last()
                         if (last.isControlFlow()) {
