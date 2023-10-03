@@ -1,0 +1,14 @@
+Vivian and I worked on lesson 7 together.
+
+**Summary**
+- Inspired by our Bril tool (from lesson 2), we decided to do something similar with the LLVM pass.
+- The tool swaps branches in conditional br instructions and negates the condition (so as to keep the code working the same).
+- We tested our tool on several programs (including Fizz-Buzz) and the behavior was identical to the original program
+
+**Implementation details**
+- We swapped branches using a handy function called swapSuccessors. We were mildly surprised that slick functions like this exist, but some simpler functions like negating a boolean didn't. To negate the condition, we compared the original condition to the literal 0.
+- Our pass produces code which is equivalent to the input, so we were able to test by simply checking that the new output was the same before and after our pass.
+
+**What was the hardest part of the task? How did you solve this problem?**
+- The hardest part of this task was mostly just getting used to LLVM syntax. Fortunately, the examples in class, the language reference (especially the Doxygen pages), and the similarity to Bril made things move smoothly. For example, we did not know that the branch instruction also acted as a jump (if it was unconditional).
+- Another tricky part was getting used to C++. We noticed that if we printed an instruction, it would display a nice string representation, but after casting the same object, we got a less helpful hex code (probably memory address).
