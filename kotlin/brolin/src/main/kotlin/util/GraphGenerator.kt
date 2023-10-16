@@ -89,7 +89,7 @@ object GraphGenerator {
             )
         }
         dominatorTree.nodes.forEach { node ->
-            node.dominated.forEach { dom ->
+            node.dominates.forEach { dom ->
                 addEdge(
                     source = dom.cfgNode,
                     sink = node.cfgNode,

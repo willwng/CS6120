@@ -165,7 +165,7 @@ object SSAClimber : Climber {
         }
 
         // Rename blocks immediately dominated by this node
-        treeTranslator[phiBlock.cfgNode]!!.dominates.forEach {
+        treeTranslator[phiBlock.cfgNode]!!.dominators.forEach {
             rename(
                 vars = vars,
                 phiBlock = phiBlockTranslator.translate(it.cfgNode),
@@ -221,5 +221,4 @@ object SSAClimber : Climber {
             it.replaceInsns(newInstructions)
         }
     }
-
 }

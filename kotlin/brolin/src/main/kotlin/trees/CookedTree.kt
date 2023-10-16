@@ -39,6 +39,10 @@ data class CookedLabel(val label: String) : CookedInstructionOrLabel, SourcedObj
 @Serializable(with = CookedInstructionSerializer::class)
 sealed interface CookedInstruction : CookedInstructionOrLabel {
     val op: Operator
+
+    fun isPure(): Boolean {
+        return op !in Operator.IMPURE
+    }
 }
 
 /** Instructions that define a variable */

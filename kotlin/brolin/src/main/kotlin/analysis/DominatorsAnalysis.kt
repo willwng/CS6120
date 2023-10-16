@@ -4,7 +4,9 @@ import util.CFG
 import util.CFGNode
 import util.CFGProgram
 
+typealias ImmediateDominatorMap = Map<CFGNode, Set<CFGNode>>
 typealias DominatorMap = Map<CFGNode, Set<CFGNode>>
+typealias DominatedMap = Map<CFGNode, Set<CFGNode>>
 typealias TreeTranslator = Map<CFGNode, DominatorTreeNode>
 
 object DominatorsAnalysis {
@@ -13,15 +15,15 @@ object DominatorsAnalysis {
      * Builds a DominatorTree from the given dominators.
      * Requires dominators to be a map from nodes to its immediate dominators
      */
-    private fun buildTree(cfg: CFG, dominators: DominatorMap): Pair<DominatorTree, TreeTranslator> {
+    private fun buildTree(cfg: CFG, dominators: ImmediateDominatorMap): Pair<DominatorTree, TreeTranslator> {
         // Convert each CFG node to a dominator tree node
         val dominatorNodesMap = cfg.nodes.associateWith { DominatorTreeNode(cfgNode = it) }
         // Populate the dominates/dominated field
         cfg.nodes.forEach { node ->
             val treeNode = dominatorNodesMap[node]!!
             val treeDominators = dominators[node]!!.map { dominatorNodesMap[it]!! }
-            treeNode.dominated = treeDominators.toSet()
-            treeDominators.forEach { it.dominates.add(treeNode) }
+            treeNode.dominates = treeDominators.toSet()
+            treeDominators.forEach { it.dominators.add(treeNode) }
         }
 
         return Pair(
@@ -33,32 +35,32 @@ object DominatorsAnalysis {
         )
     }
 
-    /** Gets the dominators for the given CFG (maps from node to its dominators) */
-    private fun getDominators(cfg: CFG): Pair<DominatorMap, DominatorMap> {
+    /** Gets the dominators/dominated for the given CFG (maps from node to its dominators) */
+    private fun getDominates(cfg: CFG): Pair<DominatedMap, DominatorMap> {
         // Maintain a from a node to its dominators, and a map from a node to its dominated nodes
-        val nodeToDominators = cfg.nodes.associateWith { _ -> cfg.nodes.toSet() }.toMutableMap()
-        val nodeToDominated = cfg.nodes.associateWith { setOf<CFGNode>() }.toMutableMap()
+        val nodeToDominated = cfg.nodes.associateWith { _ -> cfg.nodes.toSet() }.toMutableMap()
+        val nodeToDominators = cfg.nodes.associateWith { setOf<CFGNode>() }.toMutableMap()
         var changed = true
         while (changed) {
             changed = false
             cfg.nodes.forEach { node ->
-                val prevDominators = nodeToDominators[node]
+                val prevDominators = nodeToDominated[node]
                 // Determine the dominators of the node's predecessors
                 val predDominators = if (node.predecessors.isNotEmpty() && node != cfg.entry)
-                    (node.predecessors.map { pred -> nodeToDominators[pred]!! }).reduce { acc, t -> acc.intersect(t) }
+                    (node.predecessors.map { pred -> nodeToDominated[pred]!! }).reduce { acc, t -> acc.intersect(t) }
                 else emptySet()
 
                 val newDominators = predDominators union setOf(node)
                 if (prevDominators != newDominators) changed = true
 
-                nodeToDominators[node] = newDominators
+                nodeToDominated[node] = newDominators
             }
         }
         // Create the map from node -> {n | node dominates n}
-        nodeToDominators.forEach { (node, dominators) ->
-            dominators.forEach { nodeToDominated[it] = nodeToDominated[it]!!.union(setOf(node)) }
+        nodeToDominated.forEach { (node, dominators) ->
+            dominators.forEach { nodeToDominators[it] = nodeToDominators[it]!!.union(setOf(node)) }
         }
-        return Pair(nodeToDominators, nodeToDominated)
+        return Pair(nodeToDominated, nodeToDominators)
     }
 
     /** Converts a dominator map to a strict dominator map */
@@ -70,7 +72,7 @@ object DominatorsAnalysis {
 
     /** Creates a dominator tree for the given CFG */
     private fun getDominatorTrees(cfg: CFG): Pair<DominatorTree, TreeTranslator> {
-        val (nodeToDominators, nodeToDominated) = getDominators(cfg = cfg)
+        val (nodeToDominators, nodeToDominated) = getDominates(cfg = cfg)
         // Convert to strict dominators
         val nodeToStrictDominators = nodeToDominators.toStrict()
         val nodeToStrictDominated = nodeToDominated.toStrict()
@@ -94,7 +96,7 @@ object DominatorsAnalysis {
      */
     private fun computeDominanceFrontier(cfgNode: CFGNode, cfg: CFG): Set<CFGNode> {
         val dominanceFrontier = mutableSetOf<CFGNode>()
-        val nodeToDominated = getDominators(cfg = cfg).second
+        val nodeToDominated = getDominates(cfg = cfg).second
         val dominatedNodes = nodeToDominated[cfgNode]!!
 
         // Add the successors, but not anything that is dominated
@@ -115,11 +117,12 @@ object DominatorsAnalysis {
         program.graphs.associate { cfg -> cfg.fnName to getDominatorTrees(cfg = cfg) }
 
     /** Returns a DominatorMap for each CFG. The DominatorMap maps a cfg node to the nodes it dominates */
-    fun getDominators(program: CFGProgram): Map<String, DominatorMap> =
-        program.graphs.associate { cfg -> cfg.fnName to getDominators(cfg = cfg).first }
+    fun getDominated(program: CFGProgram): Map<String, DominatedMap> =
+        program.graphs.associate { cfg -> cfg.fnName to getDominates(cfg = cfg).first }
 
-    fun getDominated(program: CFGProgram): Map<String, DominatorMap> =
-        program.graphs.associate { cfg -> cfg.fnName to getDominators(cfg = cfg).second }
+    /** Returns a DominatorMap for each CFG. The DominatorMap maps a cfg node to the nodes that dominate it */
+    fun getDominators(program: CFGProgram): Map<String, DominatorMap> =
+        program.graphs.associate { cfg -> cfg.fnName to getDominates(cfg = cfg).second }
 
     /** Returns a DominanceFrontier for each CFG. The DominanceFrontier maps a cfg node to the nodes in its frontier */
     fun getDominanceFrontiers(program: CFGProgram): Map<String, DominatorMap> =
@@ -136,7 +139,7 @@ data class DominatorTree(
 ) {
     fun prettyPrint(sb: StringBuilder): StringBuilder {
         nodes.forEach { node ->
-            sb.appendLine("$node -> ${node.dominates}")
+            sb.appendLine("$node -> ${node.dominators}")
         }
         return sb
     }
@@ -147,8 +150,9 @@ class DominatorTreeNode(
     val cfgNode: CFGNode,
 ) {
     // The list of nodes that this node is immediately dominates/is dominated by
-    var dominates = mutableSetOf<DominatorTreeNode>()
-    lateinit var dominated: Set<DominatorTreeNode>
+    var dominators = mutableSetOf<DominatorTreeNode>()
+    // Nodes that are immediately dominated by this
+    lateinit var dominates: Set<DominatorTreeNode>
 
     override fun toString(): String {
         return cfgNode.name

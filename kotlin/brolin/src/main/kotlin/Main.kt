@@ -60,7 +60,7 @@ fun main(args: Array<String>) {
             }
 
             Actions.DOMINATORS -> {
-                val dominatorAnalysis = DominatorsAnalysis.getDominators(cfgProgram)
+                val dominatorAnalysis = DominatorsAnalysis.getDominated(cfgProgram)
                 println(dominatorAnalysis.prettyPrintMaps())
             }
 
