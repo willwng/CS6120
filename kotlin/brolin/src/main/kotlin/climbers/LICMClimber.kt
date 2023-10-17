@@ -1,11 +1,15 @@
 package climbers
 
 import analysis.DominatedMap
+import analysis.DominatorsAnalysis
 import analysis.LoopAnalysis
 import analysis.dataflow.DataflowAnalysis.DataflowResult
 import analysis.dataflow.ReachingDefsAnalysis
 import analysis.dataflow.ReachingDefsAnalysis.ReachingDefsBeta.ReachingDefs
 import trees.CookedProgram
+import trees.EffectOperation
+import trees.ValueOperation
+import trees.WriteInstruction
 import util.*
 
 /** This climber performs loop-invariant code motion
@@ -23,7 +27,7 @@ object LICMClimber : Climber {
         // TODO call licm
     }
 
-    fun loopInvariantCodeMotion(
+    private fun loopInvariantCodeMotion(
         ssa: CFG,
         freshLabelGearLoop: FreshLabelGearLoop,
         dominatedMap: DominatedMap,

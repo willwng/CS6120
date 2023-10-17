@@ -53,8 +53,8 @@ class DominatorsAnalysisTest {
 
 
     private fun checkDominators(cfgProgram: CFGProgram) {
-        val nodeToDominated = DominatorsAnalysis.getDominators(program = cfgProgram)
-        val nodeToDominators = DominatorsAnalysis.getDominated(program = cfgProgram)
+        val nodeToDominated = DominatorsAnalysis.getDominatorsMap(program = cfgProgram)
+        val nodeToDominators = DominatorsAnalysis.getDominatedMap(program = cfgProgram)
         cfgProgram.graphs.forEach { cfg ->
             val funcName = cfg.fnName
             println("\t Running dominator test for $funcName")
@@ -89,7 +89,7 @@ class DominatorsAnalysisTest {
 
     private fun checkDominanceFrontiersProgram(cfgProgram: CFGProgram) {
         val dominanceFrontiers = DominatorsAnalysis.getDominanceFrontiers(program = cfgProgram)
-        val nodeToDominated = DominatorsAnalysis.getDominators(program = cfgProgram)
+        val nodeToDominated = DominatorsAnalysis.getDominatorsMap(program = cfgProgram)
         cfgProgram.graphs.forEach { cfg ->
             val funcName = cfg.fnName
             checkDominanceFrontiersCFG(

@@ -117,11 +117,11 @@ object DominatorsAnalysis {
         program.graphs.associate { cfg -> cfg.fnName to getDominatorTrees(cfg = cfg) }
 
     /** Returns a DominatorMap for each CFG. The DominatorMap maps a cfg node to the nodes it dominates */
-    fun getDominated(program: CFGProgram): Map<String, DominatedMap> =
+    fun getDominatedMap(program: CFGProgram): Map<String, DominatedMap> =
         program.graphs.associate { cfg -> cfg.fnName to getDominates(cfg = cfg).first }
 
     /** Returns a DominatorMap for each CFG. The DominatorMap maps a cfg node to the nodes that dominate it */
-    fun getDominators(program: CFGProgram): Map<String, DominatorMap> =
+    fun getDominatorsMap(program: CFGProgram): Map<String, DominatorMap> =
         program.graphs.associate { cfg -> cfg.fnName to getDominates(cfg = cfg).second }
 
     /** Returns a DominanceFrontier for each CFG. The DominanceFrontier maps a cfg node to the nodes in its frontier */

@@ -26,6 +26,8 @@ sealed interface CookedInstructionOrLabel {
     fun isControlFlow(): Boolean {
         return (this is CookedInstruction && this.op in Operator.TERMINATORS)
     }
+
+    fun isPhi() = this is ValueOperation && this.op == Operator.PHI
 }
 
 @Serializable

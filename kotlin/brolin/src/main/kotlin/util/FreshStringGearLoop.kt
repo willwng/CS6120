@@ -8,7 +8,6 @@ import kotlin.math.max
 /** A gear-loop assists climbers. This one creates fresh strings */
 abstract class FreshStringGearLoop {
     open val usedStrings = mutableMapOf<String, Int>()
-    private var i = 0
 
     fun addString(name: String, lastIndex: Int = 0) {
         usedStrings[name] = max(lastIndex, usedStrings[name] ?: 0)
@@ -30,15 +29,20 @@ abstract class FreshStringGearLoop {
 /** Fresh labels for blocks */
 class FreshLabelGearLoop(program: CookedProgram) : FreshStringGearLoop() {
     init {
-        program.functions.forEach { function ->
-            function.instructions.filterIsInstance<CookedLabel>().forEach {
-                addString(it.label)
-            }
-        }
+        labels.forEach { addString(it.label) }
     }
+
+    constructor(program: CookedProgram) : this(program.functions.flatMap { function ->
+        function.instructions.filterIsInstance<CookedLabel>()
+    })
+
+    constructor(program: CFGProgram) : this(program.graphs.flatMap { cfg ->
+        cfg.nodes.flatMap { it.block.instructions }.filterIsInstance<CookedLabel>()
+    })
 
     fun get(): String = get("l")
 }
+
 
 /** Fresh names for variables */
 class FreshNameGearLoop(program: CookedProgram) : FreshStringGearLoop() {

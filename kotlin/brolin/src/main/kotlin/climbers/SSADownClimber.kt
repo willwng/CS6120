@@ -23,7 +23,6 @@ object SSADownClimber : Climber {
 
     private fun convertFromSSA(cfg: CFG) {
         val nameToNode = cfg.nodes.associateBy { it.name } // mapping from labels to CFG nodes
-        fun CookedInstructionOrLabel.isPhi() = this is ValueOperation && this.op == Operator.PHI
 
         // Replace phi instructions, add a copy along the path from label to block
         cfg.nodes.forEach { node ->

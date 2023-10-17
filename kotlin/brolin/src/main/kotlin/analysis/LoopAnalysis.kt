@@ -7,7 +7,6 @@ import trees.CookedInstruction
 import trees.ReadInstruction
 import util.CFG
 import util.CFGNode
-import util.CFGProgram
 
 /** A natural loop consists of a header, and the set of nodes in the loop */
 data class NaturalLoop(val header: CFGNode, val nodes: Set<CFGNode>) {
@@ -52,16 +51,6 @@ object LoopAnalysis {
         if (curr in visited || curr == header) return
         visited.add(curr)
         curr.predecessors.forEach { funnyDFS(header = header, curr = it, visited = visited) }
-    }
-
-    /** them loops */
-    fun getLoops(cfgProgram: CFGProgram): Set<NaturalLoop> {
-        val dominatedMaps = DominatorsAnalysis.getDominated(cfgProgram)
-        val loops = mutableSetOf<NaturalLoop>()
-        cfgProgram.graphs.forEach { cfg ->
-            loops.addAll(getLoops(cfg = cfg, dominatedMap = dominatedMaps[cfg.fnName]!!))
-        }
-        return loops
     }
 
     /** Returns the loop invariant instructions for the given loop: format is a map from instruction -> cfg node */

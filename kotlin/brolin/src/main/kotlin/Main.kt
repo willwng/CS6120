@@ -7,9 +7,8 @@ import analysis.prettyPrintFrontiers
 import analysis.prettyPrintMaps
 import analysis.prettyPrintTrees
 import climbers.DCEClimber
+import climbers.LICMClimber
 import climbers.LVNClimber
-import climbers.SSAClimber
-import climbers.SSADownClimber
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromJsonElement
@@ -39,6 +38,10 @@ fun main(args: Array<String>) {
                 println(reachingDefsAnalysis)
             }
 
+            Actions.LICM -> {
+                optimizedProgram = LICMClimber.applyToProgram(optimizedProgram)
+            }
+
             Actions.LIVE -> {
                 val liveVarsAnalysis = LiveVariablesAnalysis.analyze(cfgProgram)
                 println(liveVarsAnalysis)
@@ -60,7 +63,7 @@ fun main(args: Array<String>) {
             }
 
             Actions.DOMINATORS -> {
-                val dominatorAnalysis = DominatorsAnalysis.getDominated(cfgProgram)
+                val dominatorAnalysis = DominatorsAnalysis.getDominatedMap(cfgProgram)
                 println(dominatorAnalysis.prettyPrintMaps())
             }
 
@@ -90,11 +93,11 @@ fun main(args: Array<String>) {
 //            val prettyJsonPrinter = Json { prettyPrint = true }
 //            println(prettyJsonPrinter.encodeToString(testProgram))
 //        }
-    val ssaProgram = SSAClimber.applyToProgram(cookedProgram)
-    val unssaProgram = SSADownClimber.applyToProgram(ssaProgram)
 
+    optimizedProgram = LICMClimber.applyToProgram(optimizedProgram)
+//    optimizedProgram = SSAClimber.applyToProgram(optimizedProgram)
     val prettyJsonPrinter = Json { prettyPrint = true }
-    println(prettyJsonPrinter.encodeToString(unssaProgram))
+    println(prettyJsonPrinter.encodeToString(optimizedProgram))
 }
 
 fun handleArgs(args: Array<String>): List<Actions> {
@@ -104,6 +107,7 @@ fun handleArgs(args: Array<String>): List<Actions> {
             "--lvn" -> actions.add(Actions.LVN)
             "--dce" -> actions.add(Actions.DCE)
             "--reach" -> actions.add(Actions.REACH)
+            "--licm" -> actions.add(Actions.LICM)
             "--live" -> actions.add(Actions.LIVE)
             "--cp" -> actions.add(Actions.CONST_PROP)
             "--nout" -> actions.remove(Actions.OUT)
@@ -118,5 +122,5 @@ fun handleArgs(args: Array<String>): List<Actions> {
 }
 
 enum class Actions {
-    LVN, DCE, REACH, OUT, LIVE, CONST_PROP, DOMINATORS, DOMINATOR_TREE, DOMINANCE_FRONTIER, CFG, SSA_PHI
+    LVN, DCE, REACH, OUT, LIVE, CONST_PROP, DOMINATORS, DOMINATOR_TREE, DOMINANCE_FRONTIER, CFG, SSA_PHI, LICM
 }
