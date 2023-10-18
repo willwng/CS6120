@@ -81,12 +81,11 @@ object LoopAnalysis {
                         val isLoopInvariant = insn.args.flatMap { arg ->
                             reachingDefs.filter { it.dest == arg }
                                 .map {
-                                it !in instructionsSet || it in loopInvariant
-                            }
-                        }.all {it}
+                                    it !in instructionsSet || it in loopInvariant
+                                }
+                        }.all { it }
                         if (isLoopInvariant) {
                             change = insn in loopInvariant
-                            println(insn)
                             loopInvariant[insn] = node
                         }
                     }
