@@ -6,6 +6,7 @@ import analysis.LoopAnalysis
 import analysis.dataflow.DataflowAnalysis.DataflowResult
 import analysis.dataflow.ReachingDefsAnalysis
 import analysis.dataflow.ReachingDefsAnalysis.ReachingDefsBeta.ReachingDefs
+import trees.EffectOperation
 import trees.ValueOperation
 import util.*
 
@@ -70,6 +71,29 @@ object LICMClimber : CFGClimber {
             loop.header.predecessors.add(preHeader)
             if (loop.header == ssa.entry) ssa.entry = preHeader
             ssa.nodes.add(ssa.nodes.indexOf(loop.header), preHeader)
+
+            // Any node (outside the loop) that can jump to the header should now jump to the pre-header
+            ssa.nodes.filter { node -> node !in loop.nodes }.map { it.block.instructions }.forEach { insns ->
+                insns.filter { it.isControlFlow() }.forEach { insn ->
+                    when (insn) {
+                        is ValueOperation -> {
+                            insn.labels = insn.labels.map { label ->
+                                if (label == loop.header.name) preHeader.name else label
+                            }
+                        }
+
+                        is EffectOperation -> {
+                            insn.labels = insn.labels.map { label ->
+                                if (label == loop.header.name) preHeader.name
+                                else label
+                            }
+                        }
+
+                        else -> {}
+                    }
+                }
+            }
+
 
             // Remove LI instructions from loop
             loop.nodes.forEach {
