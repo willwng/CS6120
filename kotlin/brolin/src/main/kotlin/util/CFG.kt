@@ -42,7 +42,7 @@ data class CFG(
     val fnName: String,
     val fnArgs: List<Argument> = listOf(),
     val fnType: Type? = null,
-    val entry: CFGNode,
+    var entry: CFGNode,
     val nodes: MutableList<CFGNode> = mutableListOf()
 ) {
     /** A simple optimization that simple removes any CFG nodes that are not reachable from entry */

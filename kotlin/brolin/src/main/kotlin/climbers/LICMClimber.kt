@@ -18,13 +18,17 @@ object LICMClimber : Climber {
     override fun applyToProgram(program: CookedProgram): CookedProgram {
         val ssaProgram = SSAClimber.applyToProgram(program)
         val cfgSsaProgram = CFGProgram.of(ssaProgram)
-        // todo call licm
+        val freshLabelGearLoop = FreshLabelGearLoop(cfgSsaProgram)
+        loopInvariantCodeMotion(cfgSsaProgram, freshLabelGearLoop)
         return cfgSsaProgram.toCookedProgram()
     }
 
-    fun loopInvariantCodeMotion(ssa: CFGProgram): CFGProgram {
+    private fun loopInvariantCodeMotion(ssa: CFGProgram, freshLabelGearLoop: FreshLabelGearLoop) {
         val reachingDefs = ReachingDefsAnalysis.analyze(ssa)
-        // TODO call licm
+        val dominatedMap = DominatorsAnalysis.getDominatorsMap(program = ssa)
+        ssa.graphs.forEach { cfg ->
+            loopInvariantCodeMotion(cfg, freshLabelGearLoop, dominatedMap[cfg.fnName]!!, reachingDefs)
+        }
     }
 
     private fun loopInvariantCodeMotion(
@@ -62,6 +66,52 @@ object LICMClimber : Climber {
                     it.block.instructions.filter { ins -> ins !in movable }
                 )
             }
+
+
+            ssa.nodes.filter { node -> node !in loop.nodes }.map { it.block.instructions }.forEach {
+                it.forEach { insn ->
+                    when (insn) {
+                        is ValueOperation -> {
+                            insn.labels = insn.labels.map { label ->
+                                if (label == loop.header.name) preHeader.name else label
+                            }
+                        }
+
+                        is EffectOperation -> {
+                            insn.labels = insn.labels.map { label ->
+                                if (label == loop.header.name) preHeader.name
+                                else label
+                            }
+                        }
+
+                        else -> {}
+                    }
+                }
+            }
+
+
+
+            if (loop.header == ssa.entry) {
+                ssa.entry = preHeader
+            }
+            ssa.nodes.add(ssa.nodes.indexOf(loop.header), preHeader)
+
+            val movedNames = movable.keys.filterIsInstance<WriteInstruction>().map { it.dest }
+
+            ssa.nodes.forEach { node ->
+                node.block.instructions.filter { ins -> ins.isPhi() }.forEach { phi ->
+                    phi as ValueOperation
+                    phi.labels = phi.labels.mapIndexed { i, label ->
+                        if (phi.args[i] in movedNames) preHeader.name
+                        else label
+                    }
+                }
+            }
+
+            /*
+            TODO: replace all references to the header label outside of the loop with a ref to the preheader
+             */
+
         }
         return
     }

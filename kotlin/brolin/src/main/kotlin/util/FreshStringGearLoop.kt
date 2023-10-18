@@ -27,7 +27,8 @@ abstract class FreshStringGearLoop {
 }
 
 /** Fresh labels for blocks */
-class FreshLabelGearLoop(program: CookedProgram) : FreshStringGearLoop() {
+class FreshLabelGearLoop(labels: List<CookedLabel>) : FreshStringGearLoop() {
+
     init {
         labels.forEach { addString(it.label) }
     }

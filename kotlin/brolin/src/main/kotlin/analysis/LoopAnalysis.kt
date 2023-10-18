@@ -48,8 +48,9 @@ object LoopAnalysis {
 
     /** A DFS to find all the predecessors leading up to the header */
     private fun funnyDFS(header: CFGNode, curr: CFGNode, visited: MutableSet<CFGNode>) {
-        if (curr in visited || curr == header) return
+        if (curr in visited) return
         visited.add(curr)
+        if (curr == header) return
         curr.predecessors.forEach { funnyDFS(header = header, curr = it, visited = visited) }
     }
 

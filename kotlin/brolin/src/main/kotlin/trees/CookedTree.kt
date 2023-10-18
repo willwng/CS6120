@@ -89,7 +89,7 @@ class EffectOperation(
     override val op: Operator,
     override val args: List<String> = listOf(),
     val funcs: List<String> = listOf(),
-    val labels: List<String> = listOf(),
+    var labels: List<String> = listOf(),
 ) : CookedInstruction, ReadInstruction {
     override fun toString(): String {
         return "$op: $funcs $args $labels"
@@ -114,7 +114,7 @@ class ValueOperation(
     override val type: Type,
     override val args: List<String> = listOf(),
     val funcs: List<String> = listOf(),
-    val labels: List<String> = listOf()
+    var labels: List<String> = listOf()
 ) : CookedInstruction, ReadInstruction, WriteInstruction {
     override fun toString() = "$dest: $type = $op $funcs $args $labels"
 }
@@ -138,6 +138,7 @@ enum class Operator(val commutative: Boolean = false) {
     companion object {
         // Operations that have more complicated control-flow (signifies end of block)
         val TERMINATORS = listOf(JMP, RET, BR)
+        val IMPURE = TERMINATORS + listOf(CALL, ALLOC, STORE, LOAD, FREE)
     }
 }
 
