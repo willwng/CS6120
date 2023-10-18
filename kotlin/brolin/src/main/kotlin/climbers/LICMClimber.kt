@@ -6,7 +6,6 @@ import analysis.LoopAnalysis
 import analysis.dataflow.DataflowAnalysis.DataflowResult
 import analysis.dataflow.ReachingDefsAnalysis
 import analysis.dataflow.ReachingDefsAnalysis.ReachingDefsBeta.ReachingDefs
-import trees.EffectOperation
 import trees.ValueOperation
 import util.*
 
@@ -50,11 +49,11 @@ object LICMClimber : CFGClimber {
         loops.forEach { loop ->
             val loopInvIns =
                 LoopAnalysis.getLoopInvariantInstructions(loop = loop, reachingDefsResult = reachingDefs[ssa.fnName]!!)
-            val movable = loopInvIns.filter { (_, node) ->
-                dominatedMap[node]!!.containsAll(loop.exits) // if it dominates all loop.exits, we can move it
-            }
 
-            // Add LI instructions before the loop
+            // if it dominates all loop.exits, we can move it
+            val movable = loopInvIns.filter { (_, node) -> dominatedMap[node]!!.containsAll(loop.exits) }
+
+            // Create a pre-header node and add LI instructions
             val phName = freshLabelGearLoop.get(loop.header.name)
             val preHeader = CFGNode(
                 name = phName,
@@ -62,12 +61,15 @@ object LICMClimber : CFGClimber {
                 predecessors = loop.header.predecessors,
                 successors = mutableListOf(loop.header)
             )
+            // Update control-flow for header
             loop.header.predecessors.forEach {
                 it.successors.clear()
                 it.successors.add(preHeader)
             }
             loop.header.predecessors.clear()
             loop.header.predecessors.add(preHeader)
+            if (loop.header == ssa.entry) ssa.entry = preHeader
+            ssa.nodes.add(ssa.nodes.indexOf(loop.header), preHeader)
 
             // Remove LI instructions from loop
             loop.nodes.forEach {
@@ -77,38 +79,16 @@ object LICMClimber : CFGClimber {
             }
 
 
-            ssa.nodes.filter { node -> node !in loop.nodes }.map { it.block.instructions }.forEach {
-                it.forEach { insn ->
-                    when (insn) {
-                        is ValueOperation -> {
-                            insn.labels = insn.labels.map { label ->
-                                if (label == loop.header.name) preHeader.name else label
-                            }
-                        }
-
-                        is EffectOperation -> {
-                            insn.labels = insn.labels.map { label ->
-                                if (label == loop.header.name) preHeader.name
-                                else label
-                            }
-                        }
-
-                        else -> {}
-                    }
-                }
-            }
-
-            if (loop.header == ssa.entry) {
-                ssa.entry = preHeader
-            }
-            ssa.nodes.add(ssa.nodes.indexOf(loop.header), preHeader)
-
+            // For each phi-node in the header, split it up:
+            //  if the label comes from within the loop, keep it
+            //  if there are any labels from outside the loop, create a phi node in the pre-header and add the label
+            //  (now with a reference to the pre-header in the header phi node)
             val loopLabels = loop.nodes.map { it.name }
-
             loop.header.block.instructions.filter { it.isPhi() }.forEach { phi ->
                 phi as ValueOperation
                 // Doesn't come from loop? Ruh roh
-                val (nonLoopArgs, nonLoopLabels) = phi.args.zip(phi.labels).filter { (_, label) -> label !in loopLabels }.unzip()
+                val (nonLoopArgs, nonLoopLabels) = phi.args.zip(phi.labels)
+                    .filter { (_, label) -> label !in loopLabels }.unzip()
                 if (nonLoopArgs.isNotEmpty()) {
                     val newDest = freshNameGearLoop.get(phi.dest)
                     val newPhiNode = ValueOperation(
