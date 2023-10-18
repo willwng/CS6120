@@ -78,13 +78,15 @@ object LoopAnalysis {
                     // For every argument of the instruction, check if the reaching def is either:
                     //  outside the loop or already loop-invariant
                     if (insn is ReadInstruction && insn.isPure()) {
-                        val isLoopInvariant = insn.args.map { arg ->
-                            reachingDefs.filter { it.dest == arg }.map {
+                        val isLoopInvariant = insn.args.flatMap { arg ->
+                            reachingDefs.filter { it.dest == arg }
+                                .map {
                                 it !in instructionsSet || it in loopInvariant
                             }
-                        }.fold(true) { acc, booleans -> acc && booleans.fold(true) { acc2, b -> acc2 && b } }
+                        }.all {it}
                         if (isLoopInvariant) {
                             change = insn in loopInvariant
+                            println(insn)
                             loopInvariant[insn] = node
                         }
                     }

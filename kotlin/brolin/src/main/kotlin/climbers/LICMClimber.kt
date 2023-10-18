@@ -6,34 +6,43 @@ import analysis.LoopAnalysis
 import analysis.dataflow.DataflowAnalysis.DataflowResult
 import analysis.dataflow.ReachingDefsAnalysis
 import analysis.dataflow.ReachingDefsAnalysis.ReachingDefsBeta.ReachingDefs
-import trees.CookedProgram
 import trees.EffectOperation
 import trees.ValueOperation
-import trees.WriteInstruction
 import util.*
 
 /** This climber performs loop-invariant code motion
  * Note from the climber: Do me after SSA! */
-object LICMClimber : Climber {
-    override fun applyToProgram(program: CookedProgram): CookedProgram {
-        val ssaProgram = SSAClimber.applyToProgram(program)
-        val cfgSsaProgram = CFGProgram.of(ssaProgram)
+object LICMClimber : CFGClimber {
+    override fun applyToCFG(cfgProgram: CFGProgram): CFGProgram {
+        val cfgSsaProgram = SSAClimber.applyToCFG(cfgProgram)
         val freshLabelGearLoop = FreshLabelGearLoop(cfgSsaProgram)
-        loopInvariantCodeMotion(cfgSsaProgram, freshLabelGearLoop)
-        return cfgSsaProgram.toCookedProgram()
+        val freshNameGearLoop = FreshNameGearLoop(cfgSsaProgram)
+        loopInvariantCodeMotion(cfgSsaProgram, freshLabelGearLoop, freshNameGearLoop)
+        return cfgSsaProgram
     }
 
-    private fun loopInvariantCodeMotion(ssa: CFGProgram, freshLabelGearLoop: FreshLabelGearLoop) {
+    private fun loopInvariantCodeMotion(
+        ssa: CFGProgram,
+        freshLabelGearLoop: FreshLabelGearLoop,
+        freshNameGearLoop: FreshNameGearLoop,
+    ) {
         val reachingDefs = ReachingDefsAnalysis.analyze(ssa)
         val dominatedMap = DominatorsAnalysis.getDominatorsMap(program = ssa)
         ssa.graphs.forEach { cfg ->
-            loopInvariantCodeMotion(cfg, freshLabelGearLoop, dominatedMap[cfg.fnName]!!, reachingDefs)
+            loopInvariantCodeMotion(
+                cfg,
+                freshLabelGearLoop,
+                freshNameGearLoop,
+                dominatedMap[cfg.fnName]!!,
+                reachingDefs
+            )
         }
     }
 
     private fun loopInvariantCodeMotion(
         ssa: CFG,
         freshLabelGearLoop: FreshLabelGearLoop,
+        freshNameGearLoop: FreshNameGearLoop,
         dominatedMap: DominatedMap,
         reachingDefs: Map<String, DataflowResult<ReachingDefs>>
     ) {
@@ -46,7 +55,7 @@ object LICMClimber : Climber {
             }
 
             // Add LI instructions before the loop
-            val phName = freshLabelGearLoop.get(ssa.fnName)
+            val phName = freshLabelGearLoop.get(loop.header.name)
             val preHeader = CFGNode(
                 name = phName,
                 block = BasicBlock(movable.keys.toList()),
@@ -89,31 +98,37 @@ object LICMClimber : Climber {
                 }
             }
 
-
-
             if (loop.header == ssa.entry) {
                 ssa.entry = preHeader
             }
             ssa.nodes.add(ssa.nodes.indexOf(loop.header), preHeader)
 
-            val movedNames = movable.keys.filterIsInstance<WriteInstruction>().map { it.dest }
+            val loopLabels = loop.nodes.map { it.name }
 
-            ssa.nodes.forEach { node ->
-                node.block.instructions.filter { ins -> ins.isPhi() }.forEach { phi ->
-                    phi as ValueOperation
-                    phi.labels = phi.labels.mapIndexed { i, label ->
-                        if (phi.args[i] in movedNames) preHeader.name
-                        else label
-                    }
+            loop.header.block.instructions.filter { it.isPhi() }.forEach { phi ->
+                phi as ValueOperation
+                // Doesn't come from loop? Ruh roh
+                val (nonLoopArgs, nonLoopLabels) = phi.args.zip(phi.labels).filter { (_, label) -> label !in loopLabels }.unzip()
+                if (nonLoopArgs.isNotEmpty()) {
+                    val newDest = freshNameGearLoop.get(phi.dest)
+                    val newPhiNode = ValueOperation(
+                        op = phi.op,
+                        dest = newDest,
+                        type = phi.type,
+                        args = nonLoopArgs,
+                        labels = nonLoopLabels,
+                    )
+                    preHeader.replaceInsns(listOf(newPhiNode) + preHeader.block.instructions)
+
+                    // Add a reference to the new phi node destination and remove the non-loop-args
+                    val (args, labels) = phi.args.zip(phi.labels).filter { (_, label) ->
+                        label in loopLabels
+                    }.unzip()
+                    phi.args = args + newDest
+                    phi.labels = labels + preHeader.name
                 }
             }
-
-            /*
-            TODO: replace all references to the header label outside of the loop with a ref to the preheader
-             */
-
         }
         return
     }
-
 }

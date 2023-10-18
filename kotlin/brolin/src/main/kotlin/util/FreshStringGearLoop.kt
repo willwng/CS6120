@@ -7,38 +7,41 @@ import kotlin.math.max
 
 /** A gear-loop assists climbers. This one creates fresh strings */
 abstract class FreshStringGearLoop {
-    open val usedStrings = mutableMapOf<String, Int>()
+    open val usedStrings = mutableSetOf<String>()
 
-    fun addString(name: String, lastIndex: Int = 0) {
-        usedStrings[name] = max(lastIndex, usedStrings[name] ?: 0)
+    fun addString(name: String) {
+        usedStrings.add(name)
     }
 
     fun get(base: String): String {
-        // If we have not used it already, just take the base
         if (base !in usedStrings) {
             addString(base)
             return base
         }
-        // Otherwise, generate a new string
-        val lastIndex = usedStrings[base]!!
-        addString(base, lastIndex + 1)
-        return "${base}_${lastIndex}"
+        var i = 0
+        var s: String
+        do {
+            s = "${base}${i}"
+            i++
+        } while (s in usedStrings)
+        addString(s)
+        return s
     }
 }
 
 /** Fresh labels for blocks */
-class FreshLabelGearLoop(labels: List<CookedLabel>) : FreshStringGearLoop() {
-
+class FreshLabelGearLoop(labels: List<String>) : FreshStringGearLoop() {
     init {
-        labels.forEach { addString(it.label) }
+        labels.forEach { addString(it) }
     }
 
     constructor(program: CookedProgram) : this(program.functions.flatMap { function ->
-        function.instructions.filterIsInstance<CookedLabel>()
+        function.instructions.filterIsInstance<CookedLabel>().map { it.label }
     })
 
     constructor(program: CFGProgram) : this(program.graphs.flatMap { cfg ->
         cfg.nodes.flatMap { it.block.instructions }.filterIsInstance<CookedLabel>()
+            .map { it.label } + cfg.nodes.map { it.name }
     })
 
     fun get(): String = get("l")
@@ -46,14 +49,18 @@ class FreshLabelGearLoop(labels: List<CookedLabel>) : FreshStringGearLoop() {
 
 
 /** Fresh names for variables */
-class FreshNameGearLoop(program: CookedProgram) : FreshStringGearLoop() {
+class FreshNameGearLoop(names: List<String>) : FreshStringGearLoop() {
     init {
-        program.functions.forEach { function ->
-            function.instructions.filterIsInstance<WriteInstruction>().forEach {
-                addString(it.dest)
-            }
-        }
+        names.forEach { addString(it) }
     }
+
+    constructor(program: CookedProgram) : this(program.functions.flatMap { function ->
+        function.instructions.filterIsInstance<WriteInstruction>().map { it.dest }
+    })
+
+    constructor(program: CFGProgram) : this(program.graphs.flatMap { cfg ->
+        cfg.nodes.flatMap { it.block.instructions.filterIsInstance<WriteInstruction>().map { it.dest } }
+    })
 
     fun get(): String = get("v")
 }

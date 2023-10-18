@@ -9,6 +9,7 @@ import analysis.prettyPrintTrees
 import climbers.DCEClimber
 import climbers.LICMClimber
 import climbers.LVNClimber
+import climbers.SSADownClimber
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromJsonElement
@@ -26,21 +27,18 @@ fun main(args: Array<String>) {
     val jsonElement = Json.parseToJsonElement(input)
     val rawProgram = Json.decodeFromJsonElement<RawProgram>(jsonElement)
     val cookedProgram = TreeCooker.cookProgram(rawProgram)
-    val cfgProgram = CFGProgram.of(cookedProgram)
+    var cfgProgram = CFGProgram.of(cookedProgram)
 
-    var optimizedProgram = cookedProgram
     actions.forEach { action ->
         when (action) {
-            Actions.DCE -> optimizedProgram = DCEClimber.applyToProgram(optimizedProgram)
-            Actions.LVN -> optimizedProgram = LVNClimber.applyToProgram(optimizedProgram)
+            Actions.DCE -> cfgProgram = DCEClimber.applyToCFG(cfgProgram)
+            Actions.LVN -> cfgProgram = LVNClimber.applyToCFG(cfgProgram)
             Actions.REACH -> {
                 val reachingDefsAnalysis = ReachingDefsAnalysis.analyze(cfgProgram)
                 println(reachingDefsAnalysis)
             }
 
-            Actions.LICM -> {
-                optimizedProgram = LICMClimber.applyToProgram(optimizedProgram)
-            }
+            Actions.LICM -> cfgProgram = LICMClimber.applyToCFG(cfgProgram)
 
             Actions.LIVE -> {
                 val liveVarsAnalysis = LiveVariablesAnalysis.analyze(cfgProgram)
@@ -94,9 +92,10 @@ fun main(args: Array<String>) {
 //            println(prettyJsonPrinter.encodeToString(testProgram))
 //        }
 
-    optimizedProgram = LICMClimber.applyToProgram(optimizedProgram)
+    cfgProgram = LICMClimber.applyToCFG(cfgProgram)
 //    optimizedProgram = SSAClimber.applyToProgram(optimizedProgram)
     val prettyJsonPrinter = Json { prettyPrint = true }
+    val optimizedProgram = cfgProgram.toCookedProgram()
     println(prettyJsonPrinter.encodeToString(optimizedProgram))
 }
 

@@ -6,11 +6,16 @@ import util.CFGProgram
 import java.math.BigInteger
 
 /** A down-climber climbs in reverse. This one converts out of SSA form (replaces phi nodes with proper copies) */
-object SSADownClimber : Climber {
+object SSADownClimber : Climber, CFGClimber {
     override fun applyToProgram(program: CookedProgram): CookedProgram {
         val cfgProgram = CFGProgram.of(program)
         cfgProgram.graphs.forEach { cfg -> convertFromSSA(cfg) }
         return cfgProgram.toCookedProgram()
+    }
+
+    override fun applyToCFG(cfgProgram: CFGProgram): CFGProgram {
+        cfgProgram.graphs.forEach { cfg -> convertFromSSA(cfg) }
+        return cfgProgram
     }
 
     private fun Type.defaultValue() =

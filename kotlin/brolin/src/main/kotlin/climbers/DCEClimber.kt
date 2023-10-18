@@ -3,8 +3,13 @@ package climbers
 import trees.*
 import util.BasicBlock
 import util.BlockSetter
+import util.CFGProgram
 
-object DCEClimber : Climber {
+object DCEClimber : Climber, CFGClimber {
+    override fun applyToCFG(cfgProgram: CFGProgram): CFGProgram {
+        val dceProgram = globalDCE(forwardLocalDCE(cfgProgram.toCookedProgram()))
+        return CFGProgram.of(dceProgram)
+    }
 
     override fun applyToProgram(program: CookedProgram): CookedProgram = globalDCE(forwardLocalDCE(program))
 

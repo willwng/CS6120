@@ -3,6 +3,7 @@ package climbers
 import trees.*
 import util.BasicBlock
 import util.BlockSetter
+import util.CFGProgram
 import util.FreshNameGearLoop
 
 sealed interface BrilValue
@@ -28,14 +29,17 @@ data class ImpureValue(private val i: Int = 0) : BrilValue {
     constructor() : this(get())
 }
 
-object LVNClimber : Climber {
+object LVNClimber : CFGClimber {
 
-    override fun applyToProgram(program: CookedProgram): CookedProgram {
+    override fun applyToCFG(program: CFGProgram): CFGProgram {
         val freshNames = FreshNameGearLoop(program)
-        return BlockSetter().applyToProgramBlocks(program) { block -> lvn(block, freshNames) }
+        program.graphs.forEach { cfg ->
+            cfg.nodes.forEach { node -> node.replaceInsns(lvn(node.block, freshNames)) }
+        }
+        return program
     }
 
-    private fun lvn(basicBlock: BasicBlock, freshNames: FreshNameGearLoop): BasicBlock {
+    private fun lvn(basicBlock: BasicBlock, freshNames: FreshNameGearLoop): List<CookedInstructionOrLabel> {
         val tupleToNum: MutableMap<BrilValue, Int> = hashMapOf()  // map to value numbers
         val numToValueCanonicalVar: ArrayList<Pair<BrilValue, String>> =
             arrayListOf()  // map to value tuples, where index is value number
@@ -175,6 +179,6 @@ object LVNClimber : Climber {
                 }
                 acc
             }
-        return BasicBlock(result)
+        return result
     }
 }

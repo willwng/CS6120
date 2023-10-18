@@ -8,19 +8,17 @@ open class CFGNode(
     val predecessors: MutableList<CFGNode>,
     val successors: MutableList<CFGNode>
 ) {
-    val defines: Set<WriteInstruction> by lazy {
+    fun defines(): Set<WriteInstruction> {
         val nameToDefn = mutableMapOf<String, WriteInstruction>()
         block.instructions.filterIsInstance<WriteInstruction>().forEach { nameToDefn[it.dest] = it }
-        nameToDefn.values.toSet()
+        return nameToDefn.values.toSet()
     }
 
-    val definedNamesWithType: Map<String, Type> by lazy {
-        defines.associate { it.dest to it.type }
-    }
+    fun definedNamesWithType(): Map<String, Type> = defines().associate { it.dest to it.type }
 
-    val definedNames: Set<String> by lazy {
-        defines.map { it.dest }.toSet()
-    }
+
+    fun definedNames(): Set<String> = defines().map { it.dest }.toSet()
+
 
     fun replaceInsns(insns: List<CookedInstructionOrLabel>) {
         block = BasicBlock(insns)

@@ -61,7 +61,7 @@ sealed interface WriteInstruction : CookedInstruction {
 
 /** Instructions that use a variable */
 sealed interface ReadInstruction : CookedInstruction {
-    val args: List<String>
+    var args: List<String>
 
     fun withArgs(args: List<String>): ReadInstruction =
         when (this) {
@@ -87,7 +87,7 @@ class ConstantInstruction(
 @Serializable(with = EffectOperationSerializer::class)
 class EffectOperation(
     override val op: Operator,
-    override val args: List<String> = listOf(),
+    override var args: List<String> = listOf(),
     val funcs: List<String> = listOf(),
     var labels: List<String> = listOf(),
 ) : CookedInstruction, ReadInstruction {
@@ -112,7 +112,7 @@ class ValueOperation(
     override val op: Operator,
     override val dest: String,
     override val type: Type,
-    override val args: List<String> = listOf(),
+    override var args: List<String> = listOf(),
     val funcs: List<String> = listOf(),
     var labels: List<String> = listOf()
 ) : CookedInstruction, ReadInstruction, WriteInstruction {

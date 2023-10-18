@@ -57,13 +57,12 @@ data class PhiNode(
     }
 }
 
-object SSAClimber : Climber {
+object SSAClimber : CFGClimber {
 
-    override fun applyToProgram(program: CookedProgram): CookedProgram {
-        val cfgProgram = CFGProgram.of(program)
+    override fun applyToCFG(cfgProgram: CFGProgram): CFGProgram {
         val dominanceFrontiers = DominatorsAnalysis.getDominanceFrontiers(cfgProgram)
         val dominatorTrees = DominatorsAnalysis.getDominatorTrees(cfgProgram)
-        val freshNameGearLoop = FreshNameGearLoop(program)
+        val freshNameGearLoop = FreshNameGearLoop(cfgProgram)
         PhiNode.UNDEFINED = freshNameGearLoop.get(PhiNode.UNDEFINED)
         cfgProgram.graphs.forEach { cfg ->
             val name = cfg.fnName
@@ -75,7 +74,7 @@ object SSAClimber : Climber {
                 freshNames = freshNameGearLoop
             )
         }
-        return cfgProgram.toCookedProgram()
+        return cfgProgram
     }
 
     private fun insertPhiNodes(cfg: CFG, dominanceFrontier: DominatorMap, vars: Set<String>): PhiBlockTranslator {
@@ -84,10 +83,10 @@ object SSAClimber : Climber {
 
         // Get the PhiBlocks where each variable is possibly defined
         val varsToDef = vars.associateWith { v ->
-            phiBlockTranslator.values.filter { node -> v in node.cfgNode.definedNames }.toSet().toMutableList()
+            phiBlockTranslator.values.filter { node -> v in node.cfgNode.definedNames() }.toSet().toMutableList()
         }.toMutableMap()
 
-        val varsToType = phiBlockTranslator.values.map { node -> node.cfgNode.definedNamesWithType }
+        val varsToType = phiBlockTranslator.values.map { node -> node.cfgNode.definedNamesWithType() }
             .fold(mapOf<String, Type>()) { acc, map -> acc + map }
 
         varsToDef.forEach { (v, defV) ->
@@ -190,7 +189,7 @@ object SSAClimber : Climber {
         freshNames: FreshNameGearLoop,
     ) {
         // Gather all the variable definitions and the blocks which define them
-        val vars = cfg.nodes.map { node -> node.definedNames }
+        val vars = cfg.nodes.map { node -> node.definedNames() }
             .fold(emptySet<String>()) { acc, defs -> acc.union(defs) } + cfg.fnArgs.map { it.name }
 
 

@@ -20,8 +20,8 @@ object ReachingDefsAnalysis {
         override fun transfer(node: CFGNode, inEdge: ReachingDefs): ReachingDefs {
             val defsIn = mutableMapOf<String, WriteInstruction>()
             inEdge.defs.forEach { defsIn[it.dest] = it }
-            val kills = defsIn.filterKeys { it in node.definedNames }.values.toSet()
-            return ReachingDefs(node.defines.union(inEdge.defs subtract kills))
+            val kills = defsIn.filterKeys { it in node.definedNames() }.values.toSet()
+            return ReachingDefs(node.defines().union(inEdge.defs subtract kills))
         }
     }
 
