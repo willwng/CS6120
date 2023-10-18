@@ -1,0 +1,25 @@
+Will and I worked on [lesson 8](link needed) together.
+
+**Summary**
+- We implemented a method to find natural loops and loop invariant code, and perform loop-invariant code motion (LICM)
+- Benchmarks to come soon! (We will update this post when we have them done)
+
+**Implementation details**
+- Using our dominator analysis, we found all the back-edges in the CFG. Next, we performed a DFS traversal from the
+start of this back-edge until the header was reached. This made up our loop.
+- We then created a new data flow analysis (though it did not use our previous dataflow framework, since it was slightly
+simpler) to keep track of loop-invariant instructions (this relied on the CFG being in SSA form)
+- Finally, we implemented LICM, which operates on the CFG (assuming it is in SSA form). This creates a new pre-header
+node and moves all loop-invariant instructions into this pre-header, and updates phi nodes accordingly.
+
+**What was the hardest part of the task? How did you solve this problem?**
+- The nice part about having a correct SSA was that we could do the optimization in SSA form which made it much easier
+to reason about reaching defs. However, this was still tricky since we had issues with the phi nodes in the header node.
+- If the header contains a phi node referring to a mix of labels inside and outside of the loop, we need to lift part of
+the phi node to the pre-header. This is because phi nodes only refer to the label immediately preceding the current
+block, and all entries from the loop now come from the pre-header, eliminating the phi node's ability to distinguish
+between different entries to the loop. Our fix involved adding a new phi node to the pre-header which pertains only to
+labels outside of the loop, and modifying the phi node in the header to refer to only labels inside the loop, as well as
+the new node
+- We also needed to change all references to the header label by nodes outside of the loop to be references to the
+pre-header.
