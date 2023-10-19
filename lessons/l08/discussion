@@ -1,4 +1,6 @@
-Will and I worked on [lesson 8](link needed) together.
+Will and I worked on lesson 8 together.
+[Finding natural loops and LI code](https://github.com/willwng/CS6120/blob/main/kotlin/brolin/src/main/kotlin/analysis/LoopAnalysis.kt)
+[Loop invariant code motion](https://github.com/willwng/CS6120/blob/main/kotlin/brolin/src/main/kotlin/climbers/LICMClimber.kt)
 
 **Summary**
 - We implemented a method to find natural loops and loop invariant code, and perform loop-invariant code motion (LICM)
