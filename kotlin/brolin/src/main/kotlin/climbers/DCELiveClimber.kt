@@ -4,6 +4,7 @@ import analysis.dataflow.DataflowAnalysis.DataflowResult
 import analysis.dataflow.LiveVariablesAnalysis
 import analysis.dataflow.LiveVariablesAnalysis.LiveVariablesBeta.LiveVars
 import trees.ReadInstruction
+import trees.ValueOperation
 import trees.WriteInstruction
 import util.CFG
 import util.CFGProgram
@@ -25,13 +26,11 @@ object DCELiveClimber : CFGClimber {
             // Variables that are live out of this node
             val liveVarsOut = dataflowResult.result[node]!!.second.live
             // Keep only WriteInstructions that define something that is live out
-//            println("---")
-//            println(node.name)
-//            println(liveVarsOut)
-//            println(dataflowResult.result[node]!!.first.live)
+            // OR if in SSA-form, we want to remove phi nodes where every arg is undefined
             node.replaceInsns(
                 node.block.instructions.filter {
-                    (it !is WriteInstruction) || (it.dest in liveVarsOut) || (it.dest in liveVarsNode)
+                    ((it !is WriteInstruction) || (it.dest in liveVarsOut) || (it.dest in liveVarsNode)) ||
+                            (it.isPhi() && !(it as ValueOperation).args.contains(PhiNode.UNDEFINED))
                 }
             )
         }

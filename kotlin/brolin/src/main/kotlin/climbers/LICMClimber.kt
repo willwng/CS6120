@@ -59,15 +59,15 @@ object LICMClimber : CFGClimber {
             val preHeader = CFGNode(
                 name = phName,
                 block = BasicBlock(movable.keys.toList()),
-                predecessors = loop.header.predecessors,
+                predecessors = loop.header.predecessors.filter { it !in loop.nodes }.toMutableList(),
                 successors = mutableListOf(loop.header)
             )
-            // Update control-flow for header
-            loop.header.predecessors.forEach {
+            // Update control-flow for (node outside loop) -> header
+            loop.header.predecessors.filter { it !in loop.nodes }.forEach {
                 it.successors.clear()
                 it.successors.add(preHeader)
             }
-            loop.header.predecessors.clear()
+            loop.header.predecessors.removeIf { it !in loop.nodes }
             loop.header.predecessors.add(preHeader)
             if (loop.header == ssa.entry) ssa.entry = preHeader
             ssa.nodes.add(ssa.nodes.indexOf(loop.header), preHeader)
@@ -94,14 +94,12 @@ object LICMClimber : CFGClimber {
                 }
             }
 
-
             // Remove LI instructions from loop
             loop.nodes.forEach {
                 it.replaceInsns(
                     it.block.instructions.filter { ins -> ins !in movable }
                 )
             }
-
 
             // For each phi-node in the header, split it up:
             //  if the label comes from within the loop, keep it
