@@ -53,7 +53,7 @@ class DataflowAnalysis<T : DataflowValue>(private val beta: DataflowBeta<T>) {
             followerData[b] = mergedData
 
             val newData = beta.transfer(b, mergedData)
-            if (newData != followerData[b]) worklist.addAll(followers)
+            if (newData != influencerData[b]) worklist.addAll(followers)
             influencerData[b] = newData
         }
         return DataflowResult(cfg.nodes.fold(mutableMapOf()) { acc, node ->

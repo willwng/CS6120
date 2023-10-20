@@ -3,7 +3,7 @@ package climbers
 import analysis.dataflow.DataflowAnalysis.DataflowResult
 import analysis.dataflow.LiveVariablesAnalysis
 import analysis.dataflow.LiveVariablesAnalysis.LiveVariablesBeta.LiveVars
-import trees.CookedInstructionOrLabel
+import trees.ReadInstruction
 import trees.WriteInstruction
 import util.CFG
 import util.CFGProgram
@@ -20,12 +20,20 @@ object DCELiveClimber : CFGClimber {
 
     private fun applyToCFG(cfg: CFG, dataflowResult: DataflowResult<LiveVars>) {
         cfg.nodes.forEach { node ->
-            val liveVarsOut = dataflowResult.result[node]!!.second
-            val newInsns = mutableListOf<CookedInstructionOrLabel>()
-            node.block.instructions.filterIsInstance<WriteInstruction>().filter { insn ->
-                insn.dest in liveVarsOut.live
-            }
-
+            // Since granularity is at the node-level, we need to check possible live-vars in this node
+            val liveVarsNode = node.block.instructions.filterIsInstance<ReadInstruction>().flatMap { it.args }.toSet()
+            // Variables that are live out of this node
+            val liveVarsOut = dataflowResult.result[node]!!.second.live
+            // Keep only WriteInstructions that define something that is live out
+//            println("---")
+//            println(node.name)
+//            println(liveVarsOut)
+//            println(dataflowResult.result[node]!!.first.live)
+            node.replaceInsns(
+                node.block.instructions.filter {
+                    (it !is WriteInstruction) || (it.dest in liveVarsOut) || (it.dest in liveVarsNode)
+                }
+            )
         }
     }
 

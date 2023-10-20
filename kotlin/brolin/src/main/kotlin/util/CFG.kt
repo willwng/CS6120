@@ -65,7 +65,7 @@ data class CFG(
     /** Converts a CFG back into a function */
     fun toCookedFunction(): CookedFunction {
         val instructions = mutableListOf<CookedInstructionOrLabel>()
-        nodes.forEach { node ->
+        nodes.forEachIndexed { i, node ->
             val blockInstructions = node.block.instructions
             // If we generated a fresh name for this node, we need to give it a label
             if (blockInstructions.first() !is CookedLabel) {
@@ -77,7 +77,10 @@ data class CFG(
             if (!lastInstruction.isControlFlow()) {
                 assert(node.successors.size <= 1) // ret is optional -> possible to have no successors
                 if (node.successors.size == 1) {
-                    instructions.add(EffectOperation.jump(node.successors.first().name))
+                    val succ = node.successors.first()
+                    // No fall-through, require a jump
+                    if (i < nodes.size - 1 && nodes[i + 1] != succ)
+                        instructions.add(EffectOperation.jump(node.successors.first().name))
                 } else {
                     instructions.add(EffectOperation.ret())
                 }

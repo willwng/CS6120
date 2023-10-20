@@ -26,6 +26,13 @@ object LiveVariablesAnalysis {
                     liveSet.addAll(instr.args)
                 }
             }
+//            if(node.name.contains("sum_by_loop")) {
+//                println("---------")
+//                println(inEdge.live)
+//                println(node.successors.map { it.name })
+//                println(liveSet)
+//                println("---------")
+//            }
             return LiveVars(liveSet)
         }
 
