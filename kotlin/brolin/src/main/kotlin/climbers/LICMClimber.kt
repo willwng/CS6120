@@ -55,36 +55,40 @@ object LICMClimber : CFGClimber {
             val movable = loopInvIns.filter { (_, node) -> dominatedMap[node]!!.containsAll(loop.exits) }
 
             // Create a pre-header node and add LI instructions
-            val phName = freshLabelGearLoop.get(loop.header.name)
+            val header = loop.header
+            val phName = freshLabelGearLoop.get(header.name)
             val preHeader = CFGNode(
                 name = phName,
-                block = BasicBlock(movable.keys.toList()),
-                predecessors = loop.header.predecessors.filter { it !in loop.nodes }.toMutableList(),
-                successors = mutableListOf(loop.header)
+                block = BasicBlock(movable.keys.toList() + EffectOperation.jump(header.name)),
+                predecessors = header.predecessors.filter { it !in loop.nodes }.toMutableList(),
+                successors = mutableListOf(header)
             )
-            // Update control-flow for (node outside loop) -> header
-            loop.header.predecessors.filter { it !in loop.nodes }.forEach {
+            // Nodes inside this loop, including the pre-header
+            val loopNodes = loop.nodes union setOf(preHeader)
+            // Update control-flow for {node outside loop -> header} should now point to pre-header
+            header.predecessors.filter { it !in loopNodes }.forEach {
                 it.successors.clear()
                 it.successors.add(preHeader)
             }
-            loop.header.predecessors.removeIf { it !in loop.nodes }
-            loop.header.predecessors.add(preHeader)
-            if (loop.header == ssa.entry) ssa.entry = preHeader
-            ssa.nodes.add(ssa.nodes.indexOf(loop.header), preHeader)
+            header.predecessors.removeIf { it !in loopNodes }
 
-            // Any node (outside the loop) that can jump to the header should now jump to the pre-header
-            ssa.nodes.filter { node -> node !in loop.nodes }.map { it.block.instructions }.forEach { insns ->
+            // The entry to the CFG should be the pre-header if the header was the entry
+            if (header == ssa.entry) ssa.entry = preHeader
+            ssa.nodes.add(ssa.nodes.indexOf(header), preHeader)
+
+            // Any node outside the loop that can jump to the header should now jump to the pre-header
+            ssa.nodes.filter { node -> node !in loopNodes }.map { it.block.instructions }.forEach { insns ->
                 insns.filter { it.isControlFlow() }.forEach { insn ->
                     when (insn) {
                         is ValueOperation -> {
                             insn.labels = insn.labels.map { label ->
-                                if (label == loop.header.name) preHeader.name else label
+                                if (label == header.name) preHeader.name else label
                             }
                         }
 
                         is EffectOperation -> {
                             insn.labels = insn.labels.map { label ->
-                                if (label == loop.header.name) preHeader.name
+                                if (label == header.name) preHeader.name
                                 else label
                             }
                         }
@@ -94,7 +98,7 @@ object LICMClimber : CFGClimber {
                 }
             }
 
-            // Remove LI instructions from loop
+            // Remove LI instructions from loop (not including the pre-header)
             loop.nodes.forEach {
                 it.replaceInsns(
                     it.block.instructions.filter { ins -> ins !in movable }
@@ -106,7 +110,7 @@ object LICMClimber : CFGClimber {
             //  if there are any labels from outside the loop, create a phi node in the pre-header and add the label
             //  (now with a reference to the pre-header in the header phi node)
             val loopLabels = loop.nodes.map { it.name }
-            loop.header.block.instructions.filter { it.isPhi() }.forEach { phi ->
+            header.block.instructions.filter { it.isPhi() }.forEach { phi ->
                 phi as ValueOperation
                 // Doesn't come from loop? Ruh roh
                 val (nonLoopArgs, nonLoopLabels) = phi.args.zip(phi.labels)

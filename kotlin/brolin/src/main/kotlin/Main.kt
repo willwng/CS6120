@@ -6,9 +6,7 @@ import analysis.dataflow.ReachingDefsAnalysis
 import analysis.prettyPrintFrontiers
 import analysis.prettyPrintMaps
 import analysis.prettyPrintTrees
-import climbers.DCEClimber
-import climbers.LICMClimber
-import climbers.LVNClimber
+import climbers.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromJsonElement
@@ -85,14 +83,16 @@ fun main(args: Array<String>) {
             }
         }
     }
-//        if (Actions.OUT in actions) {
-//            val testProgram = cfgProgram.toCookedProgram()
-//            val prettyJsonPrinter = Json { prettyPrint = true }
-//            println(prettyJsonPrinter.encodeToString(testProgram))
-//        }
-
-    cfgProgram = LICMClimber.applyToCFG(cfgProgram)
 //    cfgProgram = SSAClimber.applyToCFG(cfgProgram)
+//    cfgProgram = DCELiveClimber.applyToCFG(cfgProgram)
+    cfgProgram = LICMClimber.applyToCFG(cfgProgram)
+    cfgProgram = SSADownClimber.applyToCFG(cfgProgram)
+    cfgProgram = LVNClimber.applyToCFG(cfgProgram)
+    cfgProgram = DCEClimber.applyToCFG(cfgProgram)
+    cfgProgram = DCELiveClimber.applyToCFG(cfgProgram)
+//    cfgProgram = LVNClimber.applyToCFG(cfgProgram)
+//    cfgProgram = DCELiveClimber.applyToCFG(cfgProgram)
+//    cfgProgram = DCEClimber.applyToCFG(cfgProgram)
     val prettyJsonPrinter = Json { prettyPrint = true }
     val optimizedProgram = cfgProgram.toCookedProgram()
     println(prettyJsonPrinter.encodeToString(optimizedProgram))

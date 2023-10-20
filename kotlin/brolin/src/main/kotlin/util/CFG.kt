@@ -24,7 +24,7 @@ open class CFGNode(
         block = BasicBlock(insns)
     }
 
-    override fun toString() = block.toString()
+    override fun toString() = "{name: $name, block: $block}"
 
     companion object EmptyCFG : CFGNode(
         name = "Empty",
