@@ -1,7 +1,7 @@
 **What will you do?**
 
 We will work on [AIRduct](https://squera.github.io/fcs-pdf/dingFCS2023.pdf), the array-based IR for the [Viaduct](https://www.cs.cornell.edu/andru/papers/viaduct/viaduct-tr.pdf) compiler.
-This is a research project that Vivian has been working on for the last couple of years.
+This is based on a research project that Vivian has been working on for the last couple of years.
 
 Viaduct is a compiler which synthesizes secure, distributed programs employing an extensible suite of cryptography.
 It uses security specifications in the form of information flow labels to select cryptographic protocols that make the
@@ -20,24 +20,24 @@ most aggressively when the circuit functions are larger. So, one aspect of imple
 interested in is how to produce maximally large circuit blocks.
 
 We are focusing on implementing the following:
-- Control flow (if, while)
-- A grouping procedure for creating circuit blocks in the IR from programs in which each statement is annotated with
+- Supporting control flow (if, while)
+- A grouping procedure for creating circuit blocks (in the IR) from programs in which each statement is annotated with
 a protocol. This will include reordering of code.
 - Optimizations by back-ends, to show the fruits of our work which enables them
 
 **How will you do it?**
 
 - Control flow should hopefully be straightforward.
-- Grouping requires some thinking about what reorderings are safe with respect to both data dependencies and security.
-- Optimizations will be nontrivial but based on prior work.
+- Grouping requires analysis regarding which reorderings are safe, with respect to both data dependencies and security.
+- Optimizations will be non-trivial but inspired by prior work.
     - One optimization is simply calling into SIMD instructions which are natively supported by many cryptographic
     libraries.
-    - A more interesting one is combining bulk instructions, such as merging two array map expressions into one when the
-    second map operates on the output of the first one.
+    - A more interesting optimization is the combination of bulk instructions. One example is merging two array map 
+    expressions into one, when the second map operates on the output of the first one (similar to loop fusion).
 
 **How will you empirically measure success?**
 
-- We will measure success of implementing control flow by seeing that it works. There will be test cases.
+- We will measure success of implementing control flow checking correctness on existing test cases.
 - We are not confident how to measure success of grouping yet. A good metric for the quality of a grouping might be the
 resulting number of blocks, but it's not obvious whether one can compute the minimal number of blocks to compare our
 implementation to. There doesn't exist a unique maximal grouping, but there definitely exists some set of maximal
@@ -49,5 +49,10 @@ cryptographic compilers.
 - We will test for correctness by ensuring that output is the same with and without calling into cryptographic
 protocols, that is, a computation using cryptography should yield the same result as in cleartext; the only difference
 being the added security properties.
-- We will think very hard about security.
-- We will measure the benefit of optimizations by examining run time.
+- We will think very hard about security. This is something that needs to be reasoned about abstractly rather than 
+relying on testing.
+- We can measure the benefit of optimizations by examining run time.
+
+**Team members:**
+[Vivian Ding](https://github.com/vivianyyd)
+[William Wang](https://github.com/willwng)
