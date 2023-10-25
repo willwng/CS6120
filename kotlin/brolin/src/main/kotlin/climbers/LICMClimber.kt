@@ -15,8 +15,8 @@ import util.*
 object LICMClimber : CFGClimber {
     override fun applyToCFG(cfgProgram: CFGProgram): CFGProgram {
         val cfgSsaProgram = SSAClimber.applyToCFG(cfgProgram)
-        val freshLabelGearLoop = FreshLabelGearLoop(cfgSsaProgram)
-        val freshNameGearLoop = FreshNameGearLoop(cfgSsaProgram)
+        val freshLabelGearLoop = cfgSsaProgram.freshLabels
+        val freshNameGearLoop = cfgSsaProgram.freshNames
         loopInvariantCodeMotion(cfgSsaProgram, freshLabelGearLoop, freshNameGearLoop)
         return cfgSsaProgram
     }

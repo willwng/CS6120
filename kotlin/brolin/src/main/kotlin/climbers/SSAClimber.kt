@@ -62,7 +62,7 @@ object SSAClimber : CFGClimber {
     override fun applyToCFG(cfgProgram: CFGProgram): CFGProgram {
         val dominanceFrontiers = DominatorsAnalysis.getDominanceFrontiers(cfgProgram)
         val dominatorTrees = DominatorsAnalysis.getDominatorTrees(cfgProgram)
-        val freshNameGearLoop = FreshNameGearLoop(cfgProgram)
+        val freshNameGearLoop = cfgProgram.freshNames
         PhiNode.UNDEFINED = freshNameGearLoop.get(PhiNode.UNDEFINED)
         cfgProgram.graphs.forEach { cfg ->
             val name = cfg.fnName

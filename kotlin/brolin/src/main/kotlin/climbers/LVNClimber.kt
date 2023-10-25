@@ -2,7 +2,6 @@ package climbers
 
 import trees.*
 import util.BasicBlock
-import util.BlockSetter
 import util.CFGProgram
 import util.FreshNameGearLoop
 
@@ -32,7 +31,7 @@ data class ImpureValue(private val i: Int = 0) : BrilValue {
 object LVNClimber : CFGClimber {
 
     override fun applyToCFG(program: CFGProgram): CFGProgram {
-        val freshNames = FreshNameGearLoop(program)
+        val freshNames = program.freshNames
         program.graphs.forEach { cfg ->
             cfg.nodes.forEach { node -> node.replaceInsns(lvn(node.block, freshNames)) }
         }

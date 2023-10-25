@@ -152,6 +152,9 @@ data class CFG(
 
 /** A list of CFGs, each corresponding to one function. It is guaranteed that no two CFG nodes have the same name. */
 data class CFGProgram(val graphs: List<CFG>) {
+    val freshLabels = FreshLabelGearLoop(this)
+    val freshNames= FreshNameGearLoop(this)
+
     companion object {
         fun of(program: CookedProgram): CFGProgram {
             val freshLabels = FreshLabelGearLoop(program)
