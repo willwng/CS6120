@@ -38,12 +38,13 @@ data class RawInstruction(
     val args: List<String> = listOf(),
     val funcs: List<String> = listOf(),
     val labels: List<String> = listOf(),
+    val count: Int? = 0,
     @SerialName("value") val jsonValue: JsonPrimitive? = null,
 ) : RawInstructionOrLabel, SourcedObject()
 
 /** A Label marks a position in an instruction sequence as a destination for control transfers */
 @Serializable
-data class RawLabel(val label: String) : RawInstructionOrLabel, SourcedObject()
+data class RawLabel(val label: String, val count: Int? = 0) : RawInstructionOrLabel, SourcedObject()
 
 /** A helper serializer to distinguish between Instructions and Labels **/
 object RawInstructionOrLabelSerializer :

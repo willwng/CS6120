@@ -3,7 +3,7 @@ package util
 import trees.*
 
 open class CFGNode(
-    val name: String,
+    var name: String,
     var block: BasicBlock,
     val predecessors: MutableList<CFGNode>,
     val successors: MutableList<CFGNode>
@@ -67,14 +67,15 @@ data class CFG(
         val instructions = mutableListOf<CookedInstructionOrLabel>()
         nodes.forEachIndexed { i, node ->
             val blockInstructions = node.block.instructions
+
             // If we generated a fresh name for this node, we need to give it a label
-            if (blockInstructions.first() !is CookedLabel) {
+            if (blockInstructions.firstOrNull() !is CookedLabel) {
                 instructions.add(CookedLabel(node.name))
             }
             instructions.addAll(blockInstructions)
             // Add jumps for non-terminators to retain control flow
-            val lastInstruction = blockInstructions.last()
-            if (!lastInstruction.isControlFlow()) {
+            val lastInstruction = blockInstructions.lastOrNull()
+            if (lastInstruction?.isControlFlow()?.not() == true) {
                 assert(node.successors.size <= 1) // ret is optional -> possible to have no successors
                 if (node.successors.size == 1) {
                     val succ = node.successors.first()

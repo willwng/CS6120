@@ -22,16 +22,23 @@ data class CookedFunction(
 
 @Serializable(with = CookedInstructionOrLabelSerializer::class)
 sealed interface CookedInstructionOrLabel {
+    /** For profiling output. */
+    val count: Int?
+
     /** Returns if this instruction maintains control flow */
     fun isControlFlow(): Boolean {
         return (this is CookedInstruction && this.op in Operator.TERMINATORS)
+    }
+
+    fun isBranch(): Boolean {
+        return (this is CookedInstruction && this.op == Operator.BR)
     }
 
     fun isPhi() = this is ValueOperation && this.op == Operator.PHI
 }
 
 @Serializable
-data class CookedLabel(val label: String) : CookedInstructionOrLabel, SourcedObject() {
+data class CookedLabel(val label: String, override val count: Int? = null) : CookedInstructionOrLabel, SourcedObject() {
     override fun toString(): String {
         return "$label:"
     }
@@ -45,6 +52,8 @@ sealed interface CookedInstruction : CookedInstructionOrLabel {
     fun isPure(): Boolean {
         return op !in Operator.IMPURE
     }
+
+    fun clone(): CookedInstruction
 }
 
 /** Instructions that define a variable */
@@ -54,8 +63,16 @@ sealed interface WriteInstruction : CookedInstruction {
 
     fun withDest(dest: String): WriteInstruction =
         when (this) {
-            is ConstantInstruction -> ConstantInstruction(this.op, dest, this.type, this.value)
-            is ValueOperation -> ValueOperation(this.op, dest, this.type, this.args, this.funcs, this.labels)
+            is ConstantInstruction -> ConstantInstruction(this.op, dest, this.type, this.value, this.count)
+            is ValueOperation -> ValueOperation(
+                this.op,
+                dest,
+                this.type,
+                this.args,
+                this.funcs,
+                this.labels,
+                this.count
+            )
         }
 }
 
@@ -65,8 +82,16 @@ sealed interface ReadInstruction : CookedInstruction {
 
     fun withArgs(args: List<String>): ReadInstruction =
         when (this) {
-            is EffectOperation -> EffectOperation(this.op, args, this.funcs, this.labels)
-            is ValueOperation -> ValueOperation(this.op, this.dest, this.type, args, this.funcs, this.labels)
+            is EffectOperation -> EffectOperation(this.op, args, this.funcs, this.labels, this.count)
+            is ValueOperation -> ValueOperation(
+                this.op,
+                this.dest,
+                this.type,
+                args,
+                this.funcs,
+                this.labels,
+                this.count
+            )
         }
 }
 
@@ -77,10 +102,13 @@ class ConstantInstruction(
     override val dest: String,
     override val type: Type,
     val value: Value,
+    override val count: Int? = null
 ) : CookedInstruction, WriteInstruction {
     override fun toString(): String {
         return "$dest: $type = const $value"
     }
+
+    override fun clone(): CookedInstruction = this.withDest(this.dest)
 }
 
 /** An Effect Operation is like a Value Operation, but it does not produce a value. */
@@ -90,14 +118,29 @@ class EffectOperation(
     override var args: List<String> = listOf(),
     val funcs: List<String> = listOf(),
     var labels: List<String> = listOf(),
+    override val count: Int? = null
 ) : CookedInstruction, ReadInstruction {
     override fun toString(): String {
         return "$op: $funcs $args $labels"
     }
 
+    override fun clone(): CookedInstruction = this.withArgs(this.args)
+
     companion object {
         fun jump(label: String): EffectOperation {
             return EffectOperation(op = Operator.JMP, args = listOf(), funcs = listOf(), labels = listOf(label))
+        }
+
+        fun guard(arg: String, recover: String): EffectOperation {
+            return EffectOperation(op = Operator.GUARD, args = listOf(arg), funcs = listOf(), labels = listOf(recover))
+        }
+
+        fun speculate(): EffectOperation {
+            return EffectOperation(op = Operator.SPECULATE, args = listOf(), funcs = listOf(), labels = listOf())
+        }
+
+        fun commit(): EffectOperation {
+            return EffectOperation(op = Operator.COMMIT, args = listOf(), funcs = listOf(), labels = listOf())
         }
 
         fun ret(): EffectOperation {
@@ -114,8 +157,11 @@ class ValueOperation(
     override val type: Type,
     override var args: List<String> = listOf(),
     val funcs: List<String> = listOf(),
-    var labels: List<String> = listOf()
+    var labels: List<String> = listOf(),
+    override val count: Int? = null
 ) : CookedInstruction, ReadInstruction, WriteInstruction {
+    override fun clone(): CookedInstruction = this.withArgs(this.args)
+
     override fun toString() = "$dest: $type = $op $funcs $args $labels"
 }
 
@@ -129,7 +175,8 @@ enum class Operator(val commutative: Boolean = false) {
 
     // Extensions
     FADD(true), FMUL(true), FDIV, FSUB, FEQ(true), FGT, FLT, FGE, FLE,
-    PHI, ALLOC, STORE, LOAD, FREE, PTRADD;
+    PHI, ALLOC, STORE, LOAD, FREE, PTRADD,
+    SPECULATE, COMMIT, GUARD;
 
     override fun toString(): String {
         return super.toString().lowercase()
@@ -137,7 +184,7 @@ enum class Operator(val commutative: Boolean = false) {
 
     companion object {
         // Operations that have more complicated control-flow (signifies end of block)
-        val TERMINATORS = listOf(JMP, RET, BR)
+        val TERMINATORS = listOf(JMP, RET, BR, GUARD)
         val IMPURE = TERMINATORS + listOf(CALL, ALLOC, STORE, LOAD, FREE)
     }
 }

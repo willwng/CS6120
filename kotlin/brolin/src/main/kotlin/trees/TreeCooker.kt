@@ -19,7 +19,7 @@ object TreeCooker {
 
     private fun cookInstructionOrLabel(instructionOrLabel: RawInstructionOrLabel): CookedInstructionOrLabel =
         when (instructionOrLabel) {
-            is RawLabel -> CookedLabel(instructionOrLabel.label)
+            is RawLabel -> CookedLabel(instructionOrLabel.label, instructionOrLabel.count)
             is RawInstruction -> cookInstruction(instructionOrLabel)
             else -> throw (Error("Unsupported raw type"))
         }
@@ -32,7 +32,8 @@ object TreeCooker {
                 return ConstantInstruction(
                     dest = rawInstruction.dest!!,
                     type = rawInstruction.type!!,
-                    value = cookValue(rawInstruction.type, rawInstruction.jsonValue!!)
+                    value = cookValue(rawInstruction.type, rawInstruction.jsonValue!!),
+                    count = rawInstruction.count
                 )
             }
             // Effect operation
@@ -41,7 +42,8 @@ object TreeCooker {
                     op = cookOp(rawInstruction.op),
                     args = rawInstruction.args,
                     funcs = rawInstruction.funcs,
-                    labels = rawInstruction.labels
+                    labels = rawInstruction.labels,
+                    count = rawInstruction.count
                 )
 
             }
@@ -54,7 +56,8 @@ object TreeCooker {
                     type = rawInstruction.type!!,
                     args = rawInstruction.args,
                     funcs = rawInstruction.funcs,
-                    labels = rawInstruction.labels
+                    labels = rawInstruction.labels,
+                    count = rawInstruction.count
                 )
             }
         }
