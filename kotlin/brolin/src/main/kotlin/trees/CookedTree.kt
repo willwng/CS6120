@@ -163,6 +163,12 @@ class ValueOperation(
     override fun clone(): CookedInstruction = this.withArgs(this.args)
 
     override fun toString() = "$dest: $type = $op $funcs $args $labels"
+
+    companion object {
+        fun negate(dest: String, arg: String): ValueOperation {
+            return ValueOperation(op = Operator.NOT, dest = dest, type = Type.bool(), args = listOf(arg))
+        }
+    }
 }
 
 @Serializable(with = OperatorSerializer::class)

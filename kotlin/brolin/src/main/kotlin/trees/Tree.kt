@@ -42,6 +42,12 @@ class Type(
             "$type<$baseType>"
         }
     }
+
+    companion object {
+        fun bool() : Type {
+            return Type(baseType = null, type = "\"bool\"")
+        }
+    }
 }
 
 @OptIn(ExperimentalSerializationApi::class)
