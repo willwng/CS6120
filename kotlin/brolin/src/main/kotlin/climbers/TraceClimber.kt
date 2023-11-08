@@ -110,11 +110,11 @@ object TraceClimber : CFGClimber {
                             val trueHot = curr.getHotSuccessor()?.name == it.labels.first()
                             val branchArg = it.args.first()
                             if (trueHot) {
-                                traceInsns.add(EffectOperation.guard(arg = branchArg, recover = curr.name))
+                                traceInsns.add(EffectOperation.guard(arg = branchArg, recover = traceStart.name))
                             } else {
                                 val negBranchArg = nameLoop.get(branchArg)
                                 traceInsns.add(ValueOperation.negate(dest = negBranchArg, arg = branchArg))
-                                traceInsns.add(EffectOperation.guard(arg = negBranchArg, recover = curr.name))
+                                traceInsns.add(EffectOperation.guard(arg = negBranchArg, recover = traceStart.name))
                             }
                         }
 

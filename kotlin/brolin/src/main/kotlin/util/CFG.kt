@@ -8,6 +8,13 @@ open class CFGNode(
     val predecessors: MutableList<CFGNode>,
     val successors: MutableList<CFGNode>
 ) {
+
+    val hasSpeculate by lazy {
+        block.instructions.any {
+            it is EffectOperation && it.op == Operator.SPECULATE
+        }
+    }
+
     fun defines(): Set<WriteInstruction> {
         val nameToDefn = mutableMapOf<String, WriteInstruction>()
         block.instructions.filterIsInstance<WriteInstruction>().forEach { nameToDefn[it.dest] = it }
@@ -43,6 +50,10 @@ data class CFG(
     var entry: CFGNode,
     val nodes: MutableList<CFGNode> = mutableListOf()
 ) {
+
+    val nodesWithSpeculate by lazy { nodes.filter { it.hasSpeculate } }
+
+
     /** A simple optimization that simple removes any CFG nodes that are not reachable from entry */
     fun pruneUnreachableNodes(): CFG {
         val reachableNodes = mutableSetOf<CFGNode>()
@@ -154,7 +165,7 @@ data class CFG(
 /** A list of CFGs, each corresponding to one function. It is guaranteed that no two CFG nodes have the same name. */
 data class CFGProgram(val graphs: List<CFG>) {
     val freshLabels = FreshLabelGearLoop(this)
-    val freshNames= FreshNameGearLoop(this)
+    val freshNames = FreshNameGearLoop(this)
 
     companion object {
         fun of(program: CookedProgram): CFGProgram {

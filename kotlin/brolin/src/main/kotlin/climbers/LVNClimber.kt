@@ -29,13 +29,20 @@ data class ImpureValue(private val i: Int = 0) : BrilValue {
 }
 
 object LVNClimber : CFGClimber {
+    fun applyToTraces(cfgProgram: CFGProgram): CFGProgram {
+        val freshNames = cfgProgram.freshNames
+        cfgProgram.graphs.forEach { cfg ->
+            cfg.nodesWithSpeculate.forEach { node -> node.replaceInsns(lvn(node.block, freshNames)) }
+        }
+        return cfgProgram
+    }
 
-    override fun applyToCFG(program: CFGProgram): CFGProgram {
-        val freshNames = program.freshNames
-        program.graphs.forEach { cfg ->
+    override fun applyToCFG(cfgProgram: CFGProgram): CFGProgram {
+        val freshNames = cfgProgram.freshNames
+        cfgProgram.graphs.forEach { cfg ->
             cfg.nodes.forEach { node -> node.replaceInsns(lvn(node.block, freshNames)) }
         }
-        return program
+        return cfgProgram
     }
 
     private fun lvn(basicBlock: BasicBlock, freshNames: FreshNameGearLoop): List<CookedInstructionOrLabel> {
@@ -163,6 +170,7 @@ object LVNClimber : CFGClimber {
                             }
                         }
                     }
+
                     is CookedLabel -> acc.add(inst)
                     is EffectOperation -> acc.add(
                         EffectOperation(

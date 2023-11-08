@@ -83,17 +83,17 @@ fun main(args: Array<String>) {
             }
         }
     }
+    cfgProgram = TraceClimber.applyToCFG(cfgProgram)
 //    cfgProgram = SSAClimber.applyToCFG(cfgProgram)
-//    cfgProgram = DCELiveClimber.applyToCFG(cfgProgram)
+    cfgProgram = LVNClimber.applyToTraces(cfgProgram)
+//    cfgProgram = LVNClimber.applyToCFG(cfgProgram)
+    cfgProgram = DCELiveClimber.applyToCFG(cfgProgram)
 //    cfgProgram = LICMClimber.applyToCFG(cfgProgram)
 //    cfgProgram = SSADownClimber.applyToCFG(cfgProgram)
-//    cfgProgram = LVNClimber.applyToCFG(cfgProgram)
 //    cfgProgram = DCEClimber.applyToCFG(cfgProgram)
-//    cfgProgram = DCELiveClimber.applyToCFG(cfgProgram)
 //    cfgProgram = LVNClimber.applyToCFG(cfgProgram)
 //    cfgProgram = DCELiveClimber.applyToCFG(cfgProgram)
 //    cfgProgram = DCEClimber.applyToCFG(cfgProgram)
-//    cfgProgram = TraceClimber.applyToCFG(cfgProgram)
     val prettyJsonPrinter = Json { prettyPrint = true }
     val optimizedProgram = cfgProgram.toCookedProgram()
     println(prettyJsonPrinter.encodeToString(optimizedProgram))
